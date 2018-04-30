@@ -13,17 +13,16 @@
 
 #include "Logger.h"
 #include "shader.hpp"
-#include <sstream>
 #include <windows.h>
-#pragma comment(lib, "winmm.lib")
+#include "Renderer.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 #define log __log__
 #define LOG_TRACE(a) LOG_TRACE(a, __func__)
 #define LOG_FATAL(a) LOG_FATAL(a, __func__);
 #define LOG_ERROR(a) LOG_ERROR(a, __func__);
 #define LOG_INFO(a) LOG_INFO(a, __func__);
-#define ASSERT(x) if(!(x)) __debugbreak();
-#define GlCall(x) GlClearError(); x; ASSERT(OpenGlError);
 
 const GLuint WIDTH = 600, HEIGHT = 600;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
@@ -53,22 +52,7 @@ void CalculateFrameRate()
 	}
 }
 
-static void GlClearError()
-{
-	while (glGetError() != GL_NO_ERROR);
-}
 
-static bool OpenGlError()
-{
-	while (GLenum error = glGetError())
-	{
-		std::stringstream message;
-		message << error;
-		log.LOG_ERROR(message.str());
-		return true;
-	}
-	return false;
-}
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
@@ -175,18 +159,12 @@ int main() {
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
-	GLuint vertexbuffer;
-	glGenBuffers(1, &vertexbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+	VertexBuffer vb(g_vertex_buffer_data, sizeof(g_vertex_buffer_data));
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	
-	GLuint ibo;
-	glGenBuffers(1, &ibo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(g_indecies), g_indecies, GL_STATIC_DRAW);
+	IndexBuffer ib(g_indecies, 6);
 
 	glClearColor(0, 0.5, 1, 1);
 	GLuint programID = LoadShaders("res/shaders/SimpleVertex.shader", "res/shaders/SimpleFragment.shader");
@@ -225,7 +203,7 @@ int main() {
 		r += increment;
 
 		glBindVertexArray(vao);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+		ib.Bind();
 
 		glDrawElements(GL_TRIANGLES, sizeof(g_indecies) / sizeof(GLuint), GL_UNSIGNED_INT, nullptr);
 
