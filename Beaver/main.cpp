@@ -17,6 +17,7 @@
 #include "Renderer.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "VertexArray.h"
 
 #define log __log__
 #define LOG_TRACE(a) LOG_TRACE(a, __func__)
@@ -81,7 +82,7 @@ void ScrollCallback(GLFWwindow *window, double xOffset, double yOffset)
 
 void MouseCallback(GLFWwindow *window, double xPos, double yPos)
 {
-	if (firstMouse)
+	/*if (firstMouse)
 	{
 		lastX = xPos;
 		lastY = yPos;
@@ -92,7 +93,7 @@ void MouseCallback(GLFWwindow *window, double xPos, double yPos)
 	GLfloat yOffset = lastY - yPos;  // Reversed since y-coordinates go from bottom to left
 
 	lastX = xPos;
-	lastY = yPos;
+	lastY = yPos;*/
 
 	//camera.ProcessMouseMovement(xOffset, yOffset);
 }
@@ -119,7 +120,7 @@ int main() {
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
 	{
-		log.LOG_FATAL("Failed to create GLFW window", __func__);
+		log.LOG_FATAL("Failed to create GLFW window");
 		return -1;
 	}
 
@@ -139,30 +140,29 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST);
 
-	GLuint VertexArrayID;
-	glGenVertexArrays(1, &VertexArrayID);
-	glBindVertexArray(VertexArrayID);
-
-	static const GLfloat g_vertex_buffer_data[] = {
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.5f,  0.5f, 0.0f,
-		-0.5f, 0.5f, 0.0f
+	GLfloat g_vertex_buffer_data[] = {
+		-0.5f, -0.5f,
+		0.5f, -0.5f,
+		0.5f,  0.5f,
+		-0.5f, 0.5f,
 	};
 
-	static const GLuint g_indecies[] = {
+	GLuint g_indecies[] = {
 		0,1,2,
-		2,3,0
+		2,3,0,
 	};
 
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
-	VertexBuffer vb(g_vertex_buffer_data, sizeof(g_vertex_buffer_data));
+	VertexArray va;
+	VertexBuffer vb(g_vertex_buffer_data, 4 * 2 * sizeof(GLfloat));
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	VertexBufferLayout layout;
+
+	layout.Push<float>(2);
+	va.AddBuffer(vb, layout);
 	
 	IndexBuffer ib(g_indecies, 6);
 
@@ -184,8 +184,8 @@ int main() {
 	float increment = 0.05f;
 	while (!glfwWindowShouldClose(window))
 	{
-		CalculateFrameRate();
-		std::string sFPS = std::to_string(FPS);
+		//CalculateFrameRate();
+		//std::string sFPS = std::to_string(FPS);
 		//log.LOG_TRACE(sFPS);					//TODO: Make text rendering
 
 		GlClearError();
@@ -202,10 +202,10 @@ int main() {
 
 		r += increment;
 
-		glBindVertexArray(vao);
+		va.Bind();
 		ib.Bind();
 
-		glDrawElements(GL_TRIANGLES, sizeof(g_indecies) / sizeof(GLuint), GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
 		OpenGlError();
 		glfwSwapBuffers(window);
