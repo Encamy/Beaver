@@ -18,6 +18,7 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "VertexArray.h"
+#include "VertexBufferLayout.h"
 
 #define log __log__
 #define LOG_TRACE(a) LOG_TRACE(a, __func__)
@@ -29,31 +30,6 @@ const GLuint WIDTH = 600, HEIGHT = 600;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
 
 bool keys[1024];
-bool firstMouse = true;
-GLfloat lastX = WIDTH / 2.0;
-GLfloat lastY = HEIGHT / 2.0;
-
-float FPS;
-
-void CalculateFrameRate()
-{
-	static float framesPerSecond = 0.0f;  
-	static float lastTime = 0.0f;          
-	static char strFrameRate[50] = { 0 };    
-									 
-	float currentTime = timeGetTime() * 0.001f;
-
-	++framesPerSecond;
-
-	if (currentTime - lastTime > 1.0f)
-	{
-		lastTime = currentTime;
-		FPS = framesPerSecond;
-		framesPerSecond = 0;
-	}
-}
-
-
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
@@ -77,25 +53,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void ScrollCallback(GLFWwindow *window, double xOffset, double yOffset)
 {
-	//camera.ProcessMouseScroll(yOffset);
+
 }
 
 void MouseCallback(GLFWwindow *window, double xPos, double yPos)
 {
-	/*if (firstMouse)
-	{
-		lastX = xPos;
-		lastY = yPos;
-		firstMouse = false;
-	}
 
-	GLfloat xOffset = xPos - lastX;
-	GLfloat yOffset = lastY - yPos;  // Reversed since y-coordinates go from bottom to left
-
-	lastX = xPos;
-	lastY = yPos;*/
-
-	//camera.ProcessMouseMovement(xOffset, yOffset);
 }
 
 int main() {
@@ -175,22 +138,21 @@ int main() {
 		log.LOG_ERROR("Invalid location of iniform!");
 	}
 
-	glBindVertexArray(0);
+	va.UnBind();
 	glUseProgram(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	vb.UnBind();
+	ib.UnBind();
+
+	Renderer renderer;
 
 	float r = 0.0f;
 	float increment = 0.05f;
 	while (!glfwWindowShouldClose(window))
 	{
-		//CalculateFrameRate();
-		//std::string sFPS = std::to_string(FPS);
-		//log.LOG_TRACE(sFPS);					//TODO: Make text rendering
-
 		GlClearError();
 		glfwPollEvents();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		renderer.Clear();
 
 		glUseProgram(programID);
 		glUniform3f(location, r, 0, 0);
@@ -202,10 +164,7 @@ int main() {
 
 		r += increment;
 
-		va.Bind();
-		ib.Bind();
-
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+		renderer.Draw(va, ib, programID);
 
 		OpenGlError();
 		glfwSwapBuffers(window);

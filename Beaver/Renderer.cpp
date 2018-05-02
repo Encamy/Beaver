@@ -16,3 +16,17 @@ bool OpenGlError()
 	}
 	return false;
 }
+
+void Renderer::Draw(VertexArray& va, IndexBuffer& ib, int ShaderID)
+{
+	va.Bind();
+	ib.Bind();
+	glUseProgram(ShaderID);
+
+	glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr);
+}
+
+void Renderer::Clear()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}

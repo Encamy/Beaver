@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?><DEFECTS><DEFECT>
+    <SFA>
+      <FILEPATH>d:\coding\c+opengl\beaver\include\boost\</FILEPATH>
+      <FILENAME>token_functions.hpp</FILENAME>
+      <LINE>237</LINE>
+      <COLUMN>26</COLUMN>
+    </SFA>
+    <DEFECTCODE>6330</DEFECTCODE>
+    <DESCRIPTION>'char' passed as _Param_(1) when 'unsigned char' is required in call to 'ispunct'.</DESCRIPTION>
+    <FUNCTION>boost::tokenizer_detail::traits_extension_details&lt;std::char_traits&lt;char&gt;,1&gt;::ispunct</FUNCTION>
+    <DECORATED>?ispunct@?$traits_extension_details@U?$char_traits@D@std@@$00@tokenizer_detail@boost@@SA_ND@Z</DECORATED>
+    <FUNCLINE>235</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT><DEFECT>
+    <SFA>
+      <FILEPATH>d:\coding\c+opengl\beaver\include\boost\</FILEPATH>
+      <FILENAME>token_functions.hpp</FILENAME>
+      <LINE>233</LINE>
+      <COLUMN>26</COLUMN>
+    </SFA>
+    <DEFECTCODE>6330</DEFECTCODE>
+    <DESCRIPTION>'char' passed as _Param_(1) when 'unsigned char' is required in call to 'isspace'.</DESCRIPTION>
+    <FUNCTION>boost::tokenizer_detail::traits_extension_details&lt;std::char_traits&lt;char&gt;,1&gt;::isspace</FUNCTION>
+    <DECORATED>?isspace@?$traits_extension_details@U?$char_traits@D@std@@$00@tokenizer_detail@boost@@SA_ND@Z</DECORATED>
+    <FUNCLINE>231</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT></DEFECTS>

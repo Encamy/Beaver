@@ -1,7 +1,7 @@
 #ifndef VERTEX_BUFFER_H
 #define VERTEX_BUFFER_H
 
-#include "Renderer.h"
+#include <GL/glew.h>
 
 class VertexBuffer 
 {
