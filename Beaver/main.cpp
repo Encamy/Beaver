@@ -138,6 +138,10 @@ int main() {
 	IndexBuffer ib(g_indecies, 6);
 
 	glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-1, 0, 0));
+	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(1, 1, 0));
+
+	glm::mat4 mvp = proj * view * model;
 
 	glClearColor(0, 0.5, 1, 1);
 	GLuint programID = LoadShaders("res/shaders/SimpleVertex.shader", "res/shaders/SimpleFragment.shader");
@@ -154,14 +158,14 @@ int main() {
 		log.LOG_ERROR("Invalid location of iniform!");
 	}
 
-	glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &proj[0][0]);
+	glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 
 	va.UnBind();
 	glUseProgram(0);
 	vb.UnBind();
 	ib.UnBind();
 
-	Texture texture("res/images/sample1.png");
+	Texture texture("res/images/sample.png");
 	texture.Bind();
 	int texture_uniform = glGetUniformLocation(programID, "u_Texture");
 	glUniform1i(texture_uniform, 0);
