@@ -28,7 +28,7 @@
 #define LOG_ERROR(a) LOG_ERROR(a, __func__);
 #define LOG_INFO(a) LOG_INFO(a, __func__);
 
-const GLuint WIDTH = 600, HEIGHT = 600;
+const GLuint WIDTH = 800, HEIGHT = 600;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
 
 bool keys[1024];
@@ -137,6 +137,8 @@ int main() {
 	
 	IndexBuffer ib(g_indecies, 6);
 
+	glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+
 	glClearColor(0, 0.5, 1, 1);
 	GLuint programID = LoadShaders("res/shaders/SimpleVertex.shader", "res/shaders/SimpleFragment.shader");
 	glUseProgram(programID);
@@ -145,6 +147,14 @@ int main() {
 	{
 		log.LOG_ERROR("Invalid location of iniform!");
 	}
+
+	int MVP_position = glGetUniformLocation(programID, "u_MVP");
+	if (MVP_position == -1)
+	{
+		log.LOG_ERROR("Invalid location of iniform!");
+	}
+
+	glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &proj[0][0]);
 
 	va.UnBind();
 	glUseProgram(0);
