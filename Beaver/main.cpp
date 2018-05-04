@@ -9,8 +9,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "SOIL2/SOIL2.h"
-
 #include "Logger.h"
 #include "shader.hpp"
 #include <windows.h>
@@ -19,6 +17,10 @@
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "VertexBufferLayout.h"
+#include "Texture.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #define log __log__
 #define LOG_TRACE(a) LOG_TRACE(a, __func__)
@@ -104,10 +106,10 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 
 	GLfloat g_vertex_buffer_data[] = {
-		-0.5f, -0.5f,
-		0.5f, -0.5f,
-		0.5f,  0.5f,
-		-0.5f, 0.5f,
+		-0.5f, -0.5f, 0.0f, 0.0f,
+		0.5f, -0.5f, 1.0f, 0.0,
+		0.5f,  0.5f, 1.0f, 1.0f,
+		-0.5f, 0.5f, 0.0f, 1.0f
 	};
 
 	GLuint g_indecies[] = {
@@ -115,15 +117,19 @@ int main() {
 		2,3,0,
 	};
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC0_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
 	VertexArray va;
-	VertexBuffer vb(g_vertex_buffer_data, 4 * 2 * sizeof(GLfloat));
+	VertexBuffer vb(g_vertex_buffer_data, 4 * 4 * sizeof(GLfloat));
 
 	VertexBufferLayout layout;
 
+	layout.Push<float>(2);
 	layout.Push<float>(2);
 	va.AddBuffer(vb, layout);
 	
@@ -142,6 +148,11 @@ int main() {
 	glUseProgram(0);
 	vb.UnBind();
 	ib.UnBind();
+
+	Texture texture("res/images/sample.png");
+	texture.Bind();
+	int texture_uniform = glGetUniformLocation(programID, "u_Texture");
+	glUniform1i(texture_uniform, 0);
 
 	Renderer renderer;
 

@@ -16,6 +16,9 @@
     <Filter Include="Resource Files\shaders">
       <UniqueIdentifier>{5e63f196-e7d8-42ea-a449-e96100b4b95d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\images">
+      <UniqueIdentifier>{1fddc666-054e-403d-aef7-d610a891e896}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -37,6 +40,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VertexArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,6 +68,12 @@
     <ClInclude Include="VertexBufferLayout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\SimpleFragment.shader">
@@ -70,5 +82,10 @@
     <None Include="res\shaders\SimpleVertex.shader">
       <Filter>Resource Files\shaders</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\images\sample.png">
+      <Filter>Resource Files\images</Filter>
+    </Image>
   </ItemGroup>
 </Project>

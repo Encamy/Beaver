@@ -7,3 +7,7 @@
 *.tlog
 *.idb
 log.txt
+*.ams
+*.xml
+*.lastcodeanalysissucceeded
+*.tmp
