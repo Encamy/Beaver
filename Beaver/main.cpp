@@ -22,6 +22,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include <imgui\imgui.h>
+#include <imgui\imgui_impl_glfw_gl3.h>
+
 #define log __log__
 #define LOG_TRACE(a) LOG_TRACE(a, __func__)
 #define LOG_FATAL(a) LOG_FATAL(a, __func__);
@@ -103,7 +106,7 @@ int main() {
 	glfwSetCursorPosCallback(window, MouseCallback);
 	glfwSetScrollCallback(window, ScrollCallback);
 
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -139,9 +142,6 @@ int main() {
 
 	glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
 	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-1, 0, 0));
-	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(1, 1, 0));
-
-	glm::mat4 mvp = proj * view * model;
 
 	glClearColor(0, 0.5, 1, 1);
 	GLuint programID = LoadShaders("res/shaders/SimpleVertex.shader", "res/shaders/SimpleFragment.shader");
@@ -158,7 +158,7 @@ int main() {
 		log.LOG_ERROR("Invalid location of iniform!");
 	}
 
-	glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
+
 
 	va.UnBind();
 	glUseProgram(0);
@@ -170,6 +170,12 @@ int main() {
 	int texture_uniform = glGetUniformLocation(programID, "u_Texture");
 	glUniform1i(texture_uniform, 0);
 
+	ImGui::CreateContext();
+	ImGui_ImplGlfwGL3_Init(window, true);
+	ImGui::StyleColorsDark();
+
+	glm::vec3 translation(1, 1, 0);
+
 	Renderer renderer;
 
 	float r = 0.0f;
@@ -177,9 +183,10 @@ int main() {
 	while (!glfwWindowShouldClose(window))
 	{
 		GlClearError();
-		glfwPollEvents();
 
 		renderer.Clear();
+
+		ImGui_ImplGlfwGL3_NewFrame();
 
 		glUseProgram(programID);
 		glUniform3f(location, r, 0, 0);
@@ -191,11 +198,28 @@ int main() {
 
 		r += increment;
 
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
+		glm::mat4 mvp = proj * view * model;
+
+		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
+
+		ImGui::Begin("Translation", 0);              
+		ImGui::SliderFloat3("Translation", &translation.x, -1.5f, 2.5f);
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::End();
+
 		renderer.Draw(va, ib, programID);
 
 		OpenGlError();
+
+		ImGui::Render();
+		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+
 		glfwSwapBuffers(window);
+		glfwPollEvents();
 	}
+	ImGui_ImplGlfwGL3_Shutdown();
+	ImGui::DestroyContext();
 	glfwTerminate();
 	return 0;
 }

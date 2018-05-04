@@ -136,6 +136,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\include\imgui\imgui.cpp" />
+    <ClCompile Include="..\include\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\include\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\include\imgui\imgui_impl_glfw_gl3.cpp" />
     <ClCompile Include="IndexBuffer.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
@@ -146,6 +150,9 @@
     <ClCompile Include="VertexBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\imgui\stb_rect_pack.h" />
+    <ClInclude Include="..\include\imgui\stb_textedit.h" />
+    <ClInclude Include="..\include\imgui\stb_truetype.h" />
     <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Renderer.h" />
