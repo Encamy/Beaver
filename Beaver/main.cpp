@@ -64,6 +64,8 @@ void MouseCallback(GLFWwindow *window, double xPos, double yPos)
 }
 
 int main() {
+	log.LOG_INFO("GLSL compiler can optimize unused uniforms");
+	log.LOG_INFO("Just ignore \"Invalid location of iniform\" error!");
 	log.LOG_TRACE("Initializing glfw");
 
 	glfwInit();
@@ -118,7 +120,7 @@ int main() {
 	};
 
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC0_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
@@ -149,7 +151,7 @@ int main() {
 	vb.UnBind();
 	ib.UnBind();
 
-	Texture texture("res/images/sample.png");
+	Texture texture("res/images/sample1.png");
 	texture.Bind();
 	int texture_uniform = glGetUniformLocation(programID, "u_Texture");
 	glUniform1i(texture_uniform, 0);
