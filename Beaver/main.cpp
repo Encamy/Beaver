@@ -122,6 +122,53 @@ int main() {
 		2,3,0,
 	};
 
+	GLfloat cube_vertices[] = {
+		// front
+		-1.0, -1.0,  1.0, 0.0, 0.0,
+		1.0, -1.0,  1.0, 1.0, 0.0, 
+		1.0,  1.0,  1.0, 1.0, 1.0,
+		-1.0,  1.0,  1.0, 0.0, 1.0,
+		// back
+		-1.0, -1.0, -1.0, 1.0, 0.0,
+		1.0, -1.0, -1.0, 0.0, 0.0,
+		1.0,  1.0, -1.0, 0.0, 1.0,
+		-1.0,  1.0, -1.0, 1.0, 1.0,
+	};
+
+	GLuint cube_elements[] = {
+		// front
+		0, 1, 2,
+		2, 3, 0,
+		// right
+		1, 5, 6,
+		6, 2, 1,
+		// back
+		7, 6, 5,
+		5, 4, 7,
+		// left
+		4, 0, 3,
+		3, 7, 4,
+		// bottom
+		4, 5, 1,
+		1, 0, 4,
+		// top
+		3, 2, 6,
+		6, 7, 3,
+	};
+
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -130,18 +177,18 @@ int main() {
 	glBindVertexArray(vao);
 
 	VertexArray va;
-	VertexBuffer vb(g_vertex_buffer_data, 4 * 4 * sizeof(GLfloat));
+	VertexBuffer vb(cube_vertices, sizeof(cube_vertices));
 
 	VertexBufferLayout layout;
 
-	layout.Push<float>(2);
+	layout.Push<float>(3);
 	layout.Push<float>(2);
 	va.AddBuffer(vb, layout);
 	
-	IndexBuffer ib(g_indecies, 6);
+	IndexBuffer ib(cube_elements, 36);
 
-	glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
-	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-1, 0, 0));
+	glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-1, -1, -5));
 
 	glClearColor(0, 0.5, 1, 1);
 	GLuint programID = LoadShaders("res/shaders/SimpleVertex.shader", "res/shaders/SimpleFragment.shader");
@@ -158,8 +205,6 @@ int main() {
 		log.LOG_ERROR("Invalid location of iniform!");
 	}
 
-
-
 	va.UnBind();
 	glUseProgram(0);
 	vb.UnBind();
@@ -175,13 +220,13 @@ int main() {
 	ImGui::StyleColorsDark();
 
 	glm::vec3 translation(1, 1, 0);
+	GLfloat angle = 0;
 
 	Renderer renderer;
 
-	float r = 0.0f;
-	float increment = 0.05f;
 	while (!glfwWindowShouldClose(window))
 	{
+		glfwPollEvents();
 		GlClearError();
 
 		renderer.Clear();
@@ -189,34 +234,34 @@ int main() {
 		ImGui_ImplGlfwGL3_NewFrame();
 
 		glUseProgram(programID);
-		glUniform3f(location, r, 0, 0);
 
-		if (r > 1.0f)
-			increment = -1 * increment;
-		if (r < 0.0f)
-			increment = -1 * increment;
-
-		r += increment;
-
-		glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
-		glm::mat4 mvp = proj * view * model;
-
-		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
-
-		ImGui::Begin("Translation", 0);              
-		ImGui::SliderFloat3("Translation", &translation.x, -1.5f, 2.5f);
+		ImGui::Begin("Transformation", 0);
+		ImGui::SliderFloat3("Translation", &translation.x, -5.0f, 5.0f);
+		ImGui::SliderFloat("Rotation", &angle, -360, 360);
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
 
-		renderer.Draw(va, ib, programID);
+		for (int i = 0; i < 10; i++)
+		{
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
+			model = model * glm::translate(glm::mat4(1.0f), cubePositions[i]);
+			model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+			glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+			rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(20.0f * i), glm::vec3(1.0f, 1.0f, 1.0f));
+			glm::mat4 mvp = proj * view * model * rotate;
+
+			glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
+
+			renderer.Draw(va, ib, programID);
+		}
 
 		OpenGlError();
 
 		ImGui::Render();
 		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-
+		
 		glfwSwapBuffers(window);
-		glfwPollEvents();
+
 	}
 	ImGui_ImplGlfwGL3_Shutdown();
 	ImGui::DestroyContext();
