@@ -1,3 +1,5 @@
+#include <cstdlib>
+#include <thread>
 // GLEW
 #define GLEW_STATIC
 #include <GL\glew.h>
@@ -18,6 +20,7 @@
 #include "VertexArray.h"
 #include "VertexBufferLayout.h"
 #include "Texture.h"
+#include "Camera.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -31,10 +34,18 @@
 #define LOG_ERROR(a) LOG_ERROR(a, __func__);
 #define LOG_INFO(a) LOG_INFO(a, __func__);
 
+GLFWwindow* window;
 const GLuint WIDTH = 800, HEIGHT = 600;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
 
+float lastX = WIDTH / 2.0f;
+float lastY = HEIGHT / 2.0f;
+bool firstMouse = true;
+
 bool keys[1024];
+bool debugMode = false;
+
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
@@ -56,17 +67,54 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
-void ScrollCallback(GLFWwindow *window, double xOffset, double yOffset)
-{
-
-}
-
 void MouseCallback(GLFWwindow *window, double xPos, double yPos)
 {
+	if (firstMouse)
+	{
+		lastX = xPos;
+		lastY = yPos;
+		firstMouse = false;
+	}
 
+	float xoffset = xPos - lastX;
+	float yoffset = lastY - yPos; // reversed since y-coordinates go from bottom to top
+
+	lastX = xPos;
+	lastY = yPos;
+
+	camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
+void commandsListener()
+{
+	std::string cmd;
+	while (true)
+	{
+		std::getline(std::cin, cmd);
+		log.LOG_INFO(cmd);
+
+		if (cmd == "debug")
+		{
+			debugMode = !debugMode;
+			if (debugMode)
+			{
+
+			}
+			else
+			{
+				glfwSetKeyCallback(window, key_callback);
+				glfwSetCursorPosCallback(window, MouseCallback);
+			}
+		}
+	}
+}
+
+
 int main() {
+	log.LOG_TRACE("Creating command listener");
+	std::thread listenerThread(commandsListener);
+	log.LOG_TRACE("Commad listener created!");
+
 	log.LOG_INFO("GLSL compiler can optimize unused uniforms");
 	log.LOG_INFO("Just ignore \"Invalid location of iniform\" error!");
 	log.LOG_TRACE("Initializing glfw");
@@ -78,7 +126,7 @@ int main() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "TEST", nullptr, nullptr);
+	window = glfwCreateWindow(WIDTH, HEIGHT, "TEST", nullptr, nullptr);
 	if (window == nullptr)
 	{
 		log.LOG_FATAL("Failed to create GLFW window");
@@ -104,9 +152,11 @@ int main() {
 
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetCursorPosCallback(window, MouseCallback);
-	glfwSetScrollCallback(window, ScrollCallback);
 
-	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	if (!debugMode)
+	{
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -187,9 +237,6 @@ int main() {
 	
 	IndexBuffer ib(cube_elements, 36);
 
-	glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-1, -1, -5));
-
 	glClearColor(0, 0.5, 1, 1);
 	GLuint programID = LoadShaders("res/shaders/SimpleVertex.shader", "res/shaders/SimpleFragment.shader");
 	glUseProgram(programID);
@@ -224,6 +271,9 @@ int main() {
 
 	Renderer renderer;
 
+	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, MouseCallback);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
@@ -231,15 +281,38 @@ int main() {
 
 		renderer.Clear();
 
-		ImGui_ImplGlfwGL3_NewFrame();
+		if (keys[GLFW_KEY_W] == true)
+		{
+			camera.ProcessKeyboard(FORWARD, 0.13f);
+		}
+		if (keys[GLFW_KEY_S] == true)
+		{
+			camera.ProcessKeyboard(BACKWARD, 0.13f);
+		}
+		if (keys[GLFW_KEY_A] == true)
+		{
+			camera.ProcessKeyboard(LEFT, 0.13f);
+		}
+		if (keys[GLFW_KEY_D] == true)
+		{
+			camera.ProcessKeyboard(RIGHT, 0.13f);
+		}
+
+		if (debugMode)
+		{
+			ImGui_ImplGlfwGL3_NewFrame();
+
+			ImGui::Begin("Transformation", 0);
+			ImGui::SliderFloat3("Translation", &translation.x, -5.0f, 5.0f);
+			ImGui::SliderFloat("Rotation", &angle, -360, 360);
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+		}
 
 		glUseProgram(programID);
 
-		ImGui::Begin("Transformation", 0);
-		ImGui::SliderFloat3("Translation", &translation.x, -5.0f, 5.0f);
-		ImGui::SliderFloat("Rotation", &angle, -360, 360);
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::End();
+		glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 view = camera.GetViewMatrix();
 
 		for (int i = 0; i < 10; i++)
 		{
@@ -257,14 +330,19 @@ int main() {
 
 		OpenGlError();
 
-		ImGui::Render();
-		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-		
+		if (debugMode)
+		{
+			ImGui::Render();
+			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+		}
+
 		glfwSwapBuffers(window);
 
 	}
 	ImGui_ImplGlfwGL3_Shutdown();
 	ImGui::DestroyContext();
 	glfwTerminate();
+	exit(0);
+
 	return 0;
 }

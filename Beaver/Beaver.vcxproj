@@ -88,6 +88,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>winmm.lib;..\lib\boost_libs\libboost_date_time-vc141-mt-gd-x32-1_67.lib;..\lib\$(ConfigurationName)\glfw3.lib;..\lib\$(ConfigurationName)\$(Platform)\glew32s.lib;..\lib\$(ConfigurationName)\soil2.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -140,6 +142,7 @@
     <ClCompile Include="..\include\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\include\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\include\imgui\imgui_impl_glfw_gl3.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="IndexBuffer.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
@@ -150,14 +153,11 @@
     <ClCompile Include="VertexBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\imgui\stb_rect_pack.h" />
-    <ClInclude Include="..\include\imgui\stb_textedit.h" />
-    <ClInclude Include="..\include\imgui\stb_truetype.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="shader.hpp" />
-    <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="VertexArray.h" />
     <ClInclude Include="VertexBuffer.h" />
