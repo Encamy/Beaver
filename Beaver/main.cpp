@@ -116,6 +116,7 @@ void commandsListener()
 
 
 int main() {
+	bool enable_lighting = true;
 	log.LOG_TRACE("Creating command listener");
 	std::thread listenerThread(commandsListener);
 	log.LOG_TRACE("Commad listener created!");
@@ -165,30 +166,18 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST);
 	
-
-	GLfloat g_vertex_buffer_data[] = {
-		-0.5f, -0.5f, 0.0f, 0.0f,
-		0.5f, -0.5f, 1.0f, 0.0,
-		0.5f,  0.5f, 1.0f, 1.0f,
-		-0.5f, 0.5f, 0.0f, 1.0f
-	};
-
-	GLuint g_indecies[] = {
-		0,1,2,
-		2,3,0,
-	};
-
 	GLfloat cube_vertices[] = {
 		// front
-		-1.0, -1.0,  1.0, 0.0, 0.0,		//0
-		1.0, -1.0,  1.0, 1.0, 0.0,		//1
-		1.0,  1.0,  1.0, 1.0, 1.0,		//2
-		-1.0,  1.0,  1.0, 0.0, 1.0,		//3
+		//vertex				//texture		
+		-1.0, -1.0,  1.0,		0.0, 0.0,		//0
+		1.0, -1.0,  1.0,		1.0, 0.0,		//1
+		1.0,  1.0,  1.0,		1.0, 1.0,		//2
+		-1.0,  1.0,  1.0,		0.0, 1.0,		//3
 		// back
-		-1.0, -1.0, -1.0, 1.0, 0.0,		//4
-		1.0, -1.0, -1.0, 0.0, 0.0,		//5
-		1.0,  1.0, -1.0, 0.0, 1.0,		//6
-		-1.0,  1.0, -1.0, 1.0, 1.0,		//7
+		-1.0, -1.0, -1.0,		1.0, 0.0,		//4
+		1.0, -1.0, -1.0,		0.0, 0.0,		//5
+		1.0,  1.0, -1.0,		0.0, 1.0,		//6
+		-1.0,  1.0, -1.0,		1.0, 1.0,		//7
 	};
 
 
@@ -250,6 +239,7 @@ int main() {
 	int color_position = glGetUniformLocation(ProgramID, "u_Color");
 	int MVP_position = glGetUniformLocation(ProgramID, "u_MVP");
 	int use_tex_position = glGetUniformLocation(ProgramID, "use_tex");
+	int u_lighting_position = glGetUniformLocation(ProgramID, "u_enable_lighting");
 
 	va.UnBind();
 	glUseProgram(0);
@@ -298,7 +288,6 @@ int main() {
 		{
 			camera.ProcessKeyboard(RIGHT, 0.13f);
 		}
-
 		
 		glUseProgram(ProgramID);
 
@@ -306,6 +295,7 @@ int main() {
 		glm::mat4 view = camera.GetViewMatrix();
 
 		glUniform3f(color_position, 0.6f, 0.6f, 0.6f);
+		glUniform1i(u_lighting_position, enable_lighting);
 
 		for (int i = 0; i < 10; i++)
 		{
@@ -345,6 +335,12 @@ int main() {
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				firstMouse = true;
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Lighting")) 
+			{
+				enable_lighting = !enable_lighting;
+			}
+
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
 

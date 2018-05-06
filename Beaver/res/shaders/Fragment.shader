@@ -7,6 +7,7 @@ in vec2 v_TexCoord;
 uniform vec3 u_Color;
 uniform sampler2D u_Texture;
 uniform bool use_tex;
+uniform bool u_enable_lighting;
 
 void textureFrag()
 {
@@ -28,5 +29,14 @@ void main()
 	else
 	{
 		colorFrag();
+	}
+
+	if (u_enable_lighting)
+	{
+		float ambientStrength = 0.1;
+		vec3 ambient = ambientStrength * vec3(1.0f, 1.0f, 1.0f);
+
+		vec4 result = vec4(ambient, 1.0f) * color;
+		color = result;
 	}
 }
