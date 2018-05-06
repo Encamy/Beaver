@@ -262,6 +262,7 @@ int main() {
 	ImGui::StyleColorsDark();
 
 	glm::vec3 translation(1, 1, 0);
+	glm::vec3 light_pos(2.0f, 2.0f, 2.0f);
 	GLfloat angle = 0;
 
 	Renderer renderer;
@@ -300,9 +301,9 @@ int main() {
 
 		glUniform3f(color_position, 0.6f, 0.6f, 0.6f);
 		glUniform1i(u_lighting_position, enable_lighting);
-		glUniform3f(u_lightPos, 2.0f, 2.0f, 2.0f);
+		glUniform3f(u_lightPos, light_pos[0], light_pos[1], light_pos[2]);
 
-		for (int i = 0; i < 10; i++)
+		for (int i = 0; i < 11; i++)
 		{
 			if (i >= 5 == 0)
 			{
@@ -312,17 +313,29 @@ int main() {
 			{
 				glUniform1i(use_tex_position, false);
 			}
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
-			model = model * glm::translate(glm::mat4(1.0f), cubePositions[i]);
-			model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-			glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-			rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(20.0f * i), glm::vec3(1.0f, 1.0f, 1.0f));
-			glm::mat4 mvp = proj * view * model * rotate;
+			glm::mat4 model;
+			glm::mat4 mvp;
+			if (i == 10)
+			{
+				model = glm::translate(glm::mat4(1.0f), light_pos);
+				model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f));
+				mvp = proj * view * model;
+			}
+			else
+			{
+				model = glm::translate(glm::mat4(1.0f), translation);
+				model = model * glm::translate(glm::mat4(1.0f), cubePositions[i]);
+				model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+				glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+				rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(20.0f * i), glm::vec3(1.0f, 1.0f, 1.0f));
+				model = model * rotate;
 
+				mvp = proj * view * model;
+			}
+			
 			glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 			glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-			//renderer.Draw(va, ib, ProgramID);
 			renderer.Draw(va, ProgramID, vertices.size());
 		}
 
@@ -332,8 +345,9 @@ int main() {
 		{
 			ImGui_ImplGlfwGL3_NewFrame();
 
-			ImGui::Begin("Transformation", 0);
+			ImGui::Begin("Debug", 0);
 			ImGui::SliderFloat3("Translation", &translation.x, -5.0f, 5.0f);
+			ImGui::SliderFloat3("Light Pos", &light_pos[0], -5.0f, 5.0f);
 			ImGui::SliderFloat("Rotation", &angle, -360, 360);
 			if (ImGui::Button("Hide"))
 			{
