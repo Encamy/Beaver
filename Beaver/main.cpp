@@ -35,11 +35,10 @@
 #define LOG_INFO(a) LOG_INFO(a, __func__);
 
 GLFWwindow* window;
-const GLuint WIDTH = 800, HEIGHT = 600;
-int SCREEN_WIDTH, SCREEN_HEIGHT;
+int screen_width = 800, screen_height = 600;
 
-float lastX = WIDTH / 2.0f;
-float lastY = HEIGHT / 2.0f;
+float lastX = screen_width / 2.0f;
+float lastY = screen_height / 2.0f;
 bool firstMouse = true;
 
 bool keys[1024];
@@ -126,7 +125,7 @@ int main() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	window = glfwCreateWindow(WIDTH, HEIGHT, "TEST", nullptr, nullptr);
+	window = glfwCreateWindow(screen_width, screen_height, "TEST", nullptr, nullptr);
 	if (window == nullptr)
 	{
 		log.LOG_FATAL("Failed to create GLFW window");
@@ -146,9 +145,9 @@ int main() {
 	log.LOG_INFO("Renderer: " + std::string((char*)glGetString(GL_RENDERER)));
 	log.LOG_INFO("OpenGL version: " + std::string((char*)glGetString(GL_VERSION)));
 
-	glfwGetFramebufferSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+	glfwGetFramebufferSize(window, &screen_width, &screen_height);
 
-	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	glViewport(0, 0, screen_width, screen_height);
 
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetCursorPosCallback(window, MouseCallback);
@@ -159,6 +158,7 @@ int main() {
 	}
 
 	glEnable(GL_DEPTH_TEST);
+	
 
 	GLfloat g_vertex_buffer_data[] = {
 		-0.5f, -0.5f, 0.0f, 0.0f,
@@ -174,16 +174,17 @@ int main() {
 
 	GLfloat cube_vertices[] = {
 		// front
-		-1.0, -1.0,  1.0, 0.0, 0.0,
-		1.0, -1.0,  1.0, 1.0, 0.0, 
-		1.0,  1.0,  1.0, 1.0, 1.0,
-		-1.0,  1.0,  1.0, 0.0, 1.0,
+		-1.0, -1.0,  1.0, 0.0, 0.0,		//0
+		1.0, -1.0,  1.0, 1.0, 0.0,		//1
+		1.0,  1.0,  1.0, 1.0, 1.0,		//2
+		-1.0,  1.0,  1.0, 0.0, 1.0,		//3
 		// back
-		-1.0, -1.0, -1.0, 1.0, 0.0,
-		1.0, -1.0, -1.0, 0.0, 0.0,
-		1.0,  1.0, -1.0, 0.0, 1.0,
-		-1.0,  1.0, -1.0, 1.0, 1.0,
+		-1.0, -1.0, -1.0, 1.0, 0.0,		//4
+		1.0, -1.0, -1.0, 0.0, 0.0,		//5
+		1.0,  1.0, -1.0, 0.0, 1.0,		//6
+		-1.0,  1.0, -1.0, 1.0, 1.0,		//7
 	};
+
 
 	GLuint cube_elements[] = {
 		// front
@@ -238,15 +239,9 @@ int main() {
 	IndexBuffer ib(cube_elements, 36);
 
 	glClearColor(0, 0.5, 1, 1);
-	GLuint programID = LoadShaders("res/shaders/SimpleVertex.shader", "res/shaders/SimpleFragment.shader");
-	glUseProgram(programID);
-	int location = glGetUniformLocation(programID, "u_Color");
-	if (location == -1)
-	{
-		log.LOG_ERROR("Invalid location of iniform!");
-	}
+	GLuint textureProgramID = LoadShaders("res/shaders/Vertex.shader", "res/shaders/Fragment.shader");
 
-	int MVP_position = glGetUniformLocation(programID, "u_MVP");
+	int MVP_position = glGetUniformLocation(textureProgramID, "u_MVP");
 	if (MVP_position == -1)
 	{
 		log.LOG_ERROR("Invalid location of iniform!");
@@ -257,9 +252,11 @@ int main() {
 	vb.UnBind();
 	ib.UnBind();
 
-	Texture texture("res/images/sample.png");
+	//Texture texture("res/images/brick3K/Tiles05_COL_VAR1_3K.jpg");
+	Texture texture("res/images/brick1K/Tiles05_COL_VAR1_1K.jpg");
+	//Texture texture("res/images/sample.png");
 	texture.Bind();
-	int texture_uniform = glGetUniformLocation(programID, "u_Texture");
+	int texture_uniform = glGetUniformLocation(textureProgramID, "u_Texture");
 	glUniform1i(texture_uniform, 0);
 
 	ImGui::CreateContext();
@@ -308,10 +305,9 @@ int main() {
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
 		}
+		glUseProgram(textureProgramID);
 
-		glUseProgram(programID);
-
-		glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 
 		for (int i = 0; i < 10; i++)
@@ -325,7 +321,7 @@ int main() {
 
 			glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 
-			renderer.Draw(va, ib, programID);
+			renderer.Draw(va, ib, textureProgramID);
 		}
 
 		OpenGlError();

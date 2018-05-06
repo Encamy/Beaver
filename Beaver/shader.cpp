@@ -73,7 +73,7 @@ GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_pat
 
 
 	// Compile Fragment Shader
-	log.LOG_TRACE("Compiling shader: " + std::string(vertex_file_path));
+	log.LOG_TRACE("Compiling shader: " + std::string(fragment_file_path));
 	char const * FragmentSourcePointer = FragmentShaderCode.c_str();
 	glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer, NULL);
 	glCompileShader(FragmentShaderID);
@@ -104,7 +104,6 @@ GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_pat
 		glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
 		log.LOG_ERROR(std::string(&ProgramErrorMessage[0]))
 	}
-
 
 	glDetachShader(ProgramID, VertexShaderID);
 	glDetachShader(ProgramID, FragmentShaderID);

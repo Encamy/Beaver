@@ -164,8 +164,8 @@
     <ClInclude Include="VertexBufferLayout.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\shaders\SimpleFragment.shader" />
-    <None Include="res\shaders\SimpleVertex.shader" />
+    <None Include="res\shaders\Fragment.shader" />
+    <None Include="res\shaders\Vertex.shader" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\images\sample.png" />
