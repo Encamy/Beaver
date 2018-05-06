@@ -48,6 +48,12 @@ Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
+	if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
+	{
+		glfwSetCursorPosCallback(window, NULL);
+		debugMode = true;
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(window, GL_TRUE);
@@ -293,16 +299,7 @@ int main() {
 			camera.ProcessKeyboard(RIGHT, 0.13f);
 		}
 
-		if (debugMode)
-		{
-			ImGui_ImplGlfwGL3_NewFrame();
-
-			ImGui::Begin("Transformation", 0);
-			ImGui::SliderFloat3("Translation", &translation.x, -5.0f, 5.0f);
-			ImGui::SliderFloat("Rotation", &angle, -360, 360);
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::End();
-		}
+		
 		glUseProgram(ProgramID);
 
 		glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
@@ -336,6 +333,21 @@ int main() {
 
 		if (debugMode)
 		{
+			ImGui_ImplGlfwGL3_NewFrame();
+
+			ImGui::Begin("Transformation", 0);
+			ImGui::SliderFloat3("Translation", &translation.x, -5.0f, 5.0f);
+			ImGui::SliderFloat("Rotation", &angle, -360, 360);
+			if (ImGui::Button("Hide"))
+			{
+				debugMode = false;
+				glfwSetCursorPosCallback(window, MouseCallback);
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				firstMouse = true;
+			}
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 		}
