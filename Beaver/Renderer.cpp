@@ -26,6 +26,14 @@ void Renderer::Draw(VertexArray& va, IndexBuffer& ib, int ShaderID)
 	glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr);
 }
 
+void Renderer::Draw(VertexArray & va, int ShaderID, int count)
+{
+	va.Bind();
+	glUseProgram(ShaderID);
+
+	glDrawArrays(GL_TRIANGLES, 0, count);
+}
+
 void Renderer::Clear()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

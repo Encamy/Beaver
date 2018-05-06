@@ -28,6 +28,9 @@
 #include <imgui\imgui.h>
 #include <imgui\imgui_impl_glfw_gl3.h>
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+
 #define log __log__
 #define LOG_TRACE(a) LOG_TRACE(a, __func__)
 #define LOG_FATAL(a) LOG_FATAL(a, __func__);
@@ -165,42 +168,9 @@ int main() {
 	}
 
 	glEnable(GL_DEPTH_TEST);
-	
-	GLfloat cube_vertices[] = {
-		// front
-		//vertex				//texture		
-		-1.0, -1.0,  1.0,		0.0, 0.0,		//0
-		1.0, -1.0,  1.0,		1.0, 0.0,		//1
-		1.0,  1.0,  1.0,		1.0, 1.0,		//2
-		-1.0,  1.0,  1.0,		0.0, 1.0,		//3
-		// back
-		-1.0, -1.0, -1.0,		1.0, 0.0,		//4
-		1.0, -1.0, -1.0,		0.0, 0.0,		//5
-		1.0,  1.0, -1.0,		0.0, 1.0,		//6
-		-1.0,  1.0, -1.0,		1.0, 1.0,		//7
-	};
 
-
-	GLuint cube_elements[] = {
-		// front
-		0, 1, 2,
-		2, 3, 0,
-		// right
-		1, 5, 6,
-		6, 2, 1,
-		// back
-		7, 6, 5,
-		5, 4, 7,
-		// left
-		4, 0, 3,
-		3, 7, 4,
-		// bottom
-		4, 5, 1,
-		1, 0, 4,
-		// top
-		3, 2, 6,
-		6, 7, 3,
-	};
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glm::vec3 cubePositions[] = {
 		glm::vec3(0.0f,  0.0f,  0.0f),
@@ -214,25 +184,58 @@ int main() {
 		glm::vec3(1.5f,  0.2f, -1.5f),
 		glm::vec3(-1.3f,  1.0f, -1.5f)
 	};
+	
+	std::string inputfile = "res/obj/cube.obj";
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	std::vector<GLfloat> vertices;
+	std::vector<GLfloat> normals;
+	std::vector<GLfloat> tex_coords;
+
+	std::string err;
+	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, inputfile.c_str());
+
+	if (!err.empty()) {
+		log.LOG_ERROR(err);
+	}
+
+	for (size_t s = 0; s < shapes.size(); s++) {
+		size_t index_offset = 0;
+		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+			int fv = shapes[s].mesh.num_face_vertices[f];
+
+			for (size_t v = 0; v < fv; v++) {
+				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+
+				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 0]);
+				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 1]);
+				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 2]);
+				vertices.push_back(attrib.normals[3 * idx.normal_index + 0]);
+				vertices.push_back(attrib.normals[3 * idx.normal_index + 1]);
+				vertices.push_back(attrib.normals[3 * idx.normal_index + 2]);
+				vertices.push_back(attrib.texcoords[2 * idx.texcoord_index + 0]);
+				vertices.push_back(attrib.texcoords[2 * idx.texcoord_index + 1]);
+			}
+			index_offset += fv;
+		}
+	}
 
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
 	VertexArray va;
-	VertexBuffer vb(cube_vertices, sizeof(cube_vertices));
+	VertexBuffer vb(&vertices[0], vertices.size()*sizeof(GLfloat));
 
 	VertexBufferLayout layout;
 
 	layout.Push<float>(3);
+	layout.Push<float>(3);
 	layout.Push<float>(2);
 	va.AddBuffer(vb, layout);
 	
-	IndexBuffer ib(cube_elements, 36);
-
 	glClearColor(0, 0.5, 1, 1);
 	GLuint ProgramID = LoadShaders("res/shaders/Vertex.shader", "res/shaders/Fragment.shader");
 
@@ -240,11 +243,12 @@ int main() {
 	int MVP_position = glGetUniformLocation(ProgramID, "u_MVP");
 	int use_tex_position = glGetUniformLocation(ProgramID, "use_tex");
 	int u_lighting_position = glGetUniformLocation(ProgramID, "u_enable_lighting");
+	int u_lightPos = glGetUniformLocation(ProgramID, "lightPos");
+	int u_model = glGetUniformLocation(ProgramID, "model");
 
 	va.UnBind();
 	glUseProgram(0);
 	vb.UnBind();
-	ib.UnBind();
 
 	//Texture texture("res/images/brick3K/Tiles05_COL_VAR1_3K.jpg");
 	Texture texture("res/images/brick1K/Tiles05_COL_VAR1_1K.jpg");
@@ -296,6 +300,7 @@ int main() {
 
 		glUniform3f(color_position, 0.6f, 0.6f, 0.6f);
 		glUniform1i(u_lighting_position, enable_lighting);
+		glUniform3f(u_lightPos, 2.0f, 2.0f, 2.0f);
 
 		for (int i = 0; i < 10; i++)
 		{
@@ -315,8 +320,10 @@ int main() {
 			glm::mat4 mvp = proj * view * model * rotate;
 
 			glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
+			glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-			renderer.Draw(va, ib, ProgramID);
+			//renderer.Draw(va, ib, ProgramID);
+			renderer.Draw(va, ProgramID, vertices.size());
 		}
 
 		OpenGlError();

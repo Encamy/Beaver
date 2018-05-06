@@ -17,6 +17,7 @@ bool OpenGlError();
 class Renderer {
 public:
 	void Draw(VertexArray& va, IndexBuffer& ib, int ShaderID);
+	void Draw(VertexArray& va, int ShaderID, int count);
 	void Clear();
 
 private:
