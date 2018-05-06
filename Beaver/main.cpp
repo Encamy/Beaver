@@ -239,13 +239,11 @@ int main() {
 	IndexBuffer ib(cube_elements, 36);
 
 	glClearColor(0, 0.5, 1, 1);
-	GLuint textureProgramID = LoadShaders("res/shaders/Vertex.shader", "res/shaders/Fragment.shader");
+	GLuint ProgramID = LoadShaders("res/shaders/Vertex.shader", "res/shaders/Fragment.shader");
 
-	int MVP_position = glGetUniformLocation(textureProgramID, "u_MVP");
-	if (MVP_position == -1)
-	{
-		log.LOG_ERROR("Invalid location of iniform!");
-	}
+	int color_position = glGetUniformLocation(ProgramID, "u_Color");
+	int MVP_position = glGetUniformLocation(ProgramID, "u_MVP");
+	int use_tex_position = glGetUniformLocation(ProgramID, "use_tex");
 
 	va.UnBind();
 	glUseProgram(0);
@@ -256,7 +254,7 @@ int main() {
 	Texture texture("res/images/brick1K/Tiles05_COL_VAR1_1K.jpg");
 	//Texture texture("res/images/sample.png");
 	texture.Bind();
-	int texture_uniform = glGetUniformLocation(textureProgramID, "u_Texture");
+	int texture_uniform = glGetUniformLocation(ProgramID, "u_Texture");
 	glUniform1i(texture_uniform, 0);
 
 	ImGui::CreateContext();
@@ -305,13 +303,23 @@ int main() {
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
 		}
-		glUseProgram(textureProgramID);
+		glUseProgram(ProgramID);
 
 		glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 
+		glUniform3f(color_position, 0.6f, 0.6f, 0.6f);
+
 		for (int i = 0; i < 10; i++)
 		{
+			if (i >= 5 == 0)
+			{
+				glUniform1i(use_tex_position, true);
+			}
+			else
+			{
+				glUniform1i(use_tex_position, false);
+			}
 			glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
 			model = model * glm::translate(glm::mat4(1.0f), cubePositions[i]);
 			model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
@@ -321,7 +329,7 @@ int main() {
 
 			glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 
-			renderer.Draw(va, ib, textureProgramID);
+			renderer.Draw(va, ib, ProgramID);
 		}
 
 		OpenGlError();
