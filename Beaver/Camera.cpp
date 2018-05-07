@@ -43,6 +43,10 @@ void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)
 		Position -= Right * velocity;
 	if (direction == RIGHT)
 		Position += Right * velocity;
+	if (direction == UP)
+		Position += Up * velocity;
+	if (direction == DOWN)
+		Position -= Up * velocity;
 }
 
 void Camera::ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch)
@@ -67,6 +71,11 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset, GLboolean constr
 glm::mat4 Camera::GetViewMatrix()
 {
 	return glm::lookAt(Position, Position + Front, Up);
+}
+
+glm::vec3 Camera::GetPos()
+{
+	return Position;
 }
 
 Camera::~Camera()

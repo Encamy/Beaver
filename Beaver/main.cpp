@@ -167,6 +167,8 @@ int main() {
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
 
+	glfwSwapInterval(1);
+
 	glEnable(GL_DEPTH_TEST);
 
 	glEnable(GL_BLEND);
@@ -245,6 +247,7 @@ int main() {
 	int u_lighting_position = glGetUniformLocation(ProgramID, "u_enable_lighting");
 	int u_lightPos = glGetUniformLocation(ProgramID, "lightPos");
 	int u_model = glGetUniformLocation(ProgramID, "model");
+	int u_viewPos = glGetUniformLocation(ProgramID, "viewPos");
 
 	va.UnBind();
 	glUseProgram(0);
@@ -278,28 +281,41 @@ int main() {
 		renderer.Clear();
 
 		if (keys[GLFW_KEY_W] == true)
-		{
 			camera.ProcessKeyboard(FORWARD, 0.13f);
-		}
 		if (keys[GLFW_KEY_S] == true)
-		{
 			camera.ProcessKeyboard(BACKWARD, 0.13f);
-		}
 		if (keys[GLFW_KEY_A] == true)
-		{
 			camera.ProcessKeyboard(LEFT, 0.13f);
-		}
 		if (keys[GLFW_KEY_D] == true)
-		{
 			camera.ProcessKeyboard(RIGHT, 0.13f);
-		}
-		
+		if (keys[GLFW_KEY_SPACE])
+			camera.ProcessKeyboard(UP, 0.13f);
+		if (keys[GLFW_KEY_LEFT_SHIFT])
+			camera.ProcessKeyboard(DOWN, 0.13f);
+		if (keys[GLFW_KEY_KP_ADD])
+			angle += 1.0f;
+		if (keys[GLFW_KEY_KP_SUBTRACT])
+			angle -= 1.0f;
+		if (keys[GLFW_KEY_KP_6])
+			light_pos[0] += 0.1f;
+		if (keys[GLFW_KEY_KP_4])
+			light_pos[0] -= 0.1f;
+		if (keys[GLFW_KEY_KP_8])
+			light_pos[1] += 0.1f;
+		if (keys[GLFW_KEY_KP_2])
+			light_pos[1] -= 0.1f;
+		if (keys[GLFW_KEY_KP_3])
+			light_pos[2] += 0.1f;
+		if (keys[GLFW_KEY_KP_9])
+			light_pos[2] -= 0.1f;
+
 		glUseProgram(ProgramID);
 
 		glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 
-		glUniform3f(color_position, 0.6f, 0.6f, 0.6f);
+		glm::vec3 viewPos = camera.GetPos();
+		glUniform3f(u_viewPos, viewPos[0], viewPos[1], viewPos[2]);
 		glUniform1i(u_lighting_position, enable_lighting);
 		glUniform3f(u_lightPos, light_pos[0], light_pos[1], light_pos[2]);
 
@@ -317,12 +333,14 @@ int main() {
 			glm::mat4 mvp;
 			if (i == 10)
 			{
+				glUniform3f(color_position, 1.0f, 1.0f, 1.0f);
 				model = glm::translate(glm::mat4(1.0f), light_pos);
 				model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f));
 				mvp = proj * view * model;
 			}
 			else
 			{
+				glUniform3f(color_position, 0.2f, 0.6f, 0.2f);
 				model = glm::translate(glm::mat4(1.0f), translation);
 				model = model * glm::translate(glm::mat4(1.0f), cubePositions[i]);
 				model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));

@@ -11,6 +11,7 @@ uniform sampler2D u_Texture;
 uniform bool use_tex;
 uniform bool u_enable_lighting;
 uniform vec3 lightPos;
+uniform vec3 viewPos;
 
 void textureFrag()
 {
@@ -47,7 +48,14 @@ void main()
 		float diff = max(dot(norm, lightDir), 0.0);
 		vec3 diffuse = diff * lightColor;
 
-		vec4 result = vec4((ambient + diffuse), 1.0f) * color;
+		//specular
+		float specularStrength = 0.5;
+		vec3 viewDir = normalize(viewPos - FragPos);
+		vec3 reflectDir = reflect(-lightDir, norm);
+		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+		vec3 specular = specularStrength*spec*lightColor;
+
+		vec4 result = vec4((ambient + diffuse + specular), 1.0f) * color;
 		color = result;
 	}
 }

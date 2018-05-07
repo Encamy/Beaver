@@ -8,7 +8,9 @@ enum Camera_Movement {
 	FORWARD,
 	BACKWARD,
 	LEFT,
-	RIGHT
+	RIGHT,
+	UP,
+	DOWN
 };
 
 // Default camera values
@@ -46,6 +48,7 @@ public:
 	void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true);
 	
 	glm::mat4 GetViewMatrix();
+	glm::vec3 Camera::GetPos();
 };
 
 #endif
