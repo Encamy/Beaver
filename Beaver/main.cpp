@@ -354,7 +354,7 @@ int main() {
 			glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 			glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-			renderer.Draw(va, ProgramID, vertices.size());
+			renderer.Draw(va, ProgramID, vertices.size() / 8); //count of triangles! vertices.size() = 3v + 3vn + 2vt
 		}
 
 		OpenGlError();
