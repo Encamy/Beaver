@@ -38,7 +38,7 @@
 #define LOG_INFO(a) LOG_INFO(a, __func__);
 
 GLFWwindow* window;
-int screen_width = 800, screen_height = 600;
+int screen_width = 1200, screen_height = 800;
 
 float lastX = screen_width / 2.0f;
 float lastY = screen_height / 2.0f;
@@ -264,8 +264,8 @@ int main() {
 	ImGui_ImplGlfwGL3_Init(window, true);
 	ImGui::StyleColorsDark();
 
-	glm::vec3 translation(1, 1, 0);
-	glm::vec3 light_pos(2.0f, 2.0f, 2.0f);
+	glm::vec3 translation(0, 0, 0);
+	glm::vec3 light_pos(2.0f, 0.0f, 2.0f);
 	GLfloat angle = 0;
 
 	Renderer renderer;
@@ -281,33 +281,17 @@ int main() {
 		renderer.Clear();
 
 		if (keys[GLFW_KEY_W] == true)
-			camera.ProcessKeyboard(FORWARD, 0.13f);
+			camera.ProcessKeyboard(FORWARD, camera.MovementSpeed);
 		if (keys[GLFW_KEY_S] == true)
-			camera.ProcessKeyboard(BACKWARD, 0.13f);
+			camera.ProcessKeyboard(BACKWARD, camera.MovementSpeed);
 		if (keys[GLFW_KEY_A] == true)
-			camera.ProcessKeyboard(LEFT, 0.13f);
+			camera.ProcessKeyboard(LEFT, camera.MovementSpeed);
 		if (keys[GLFW_KEY_D] == true)
-			camera.ProcessKeyboard(RIGHT, 0.13f);
+			camera.ProcessKeyboard(RIGHT, camera.MovementSpeed);
 		if (keys[GLFW_KEY_SPACE])
-			camera.ProcessKeyboard(UP, 0.13f);
+			camera.ProcessKeyboard(UP, camera.MovementSpeed);
 		if (keys[GLFW_KEY_LEFT_SHIFT])
-			camera.ProcessKeyboard(DOWN, 0.13f);
-		if (keys[GLFW_KEY_KP_ADD])
-			angle += 1.0f;
-		if (keys[GLFW_KEY_KP_SUBTRACT])
-			angle -= 1.0f;
-		if (keys[GLFW_KEY_KP_6])
-			light_pos[0] += 0.1f;
-		if (keys[GLFW_KEY_KP_4])
-			light_pos[0] -= 0.1f;
-		if (keys[GLFW_KEY_KP_8])
-			light_pos[1] += 0.1f;
-		if (keys[GLFW_KEY_KP_2])
-			light_pos[1] -= 0.1f;
-		if (keys[GLFW_KEY_KP_3])
-			light_pos[2] += 0.1f;
-		if (keys[GLFW_KEY_KP_9])
-			light_pos[2] -= 0.1f;
+			camera.ProcessKeyboard(DOWN, camera.MovementSpeed);
 
 		glUseProgram(ProgramID);
 
@@ -318,44 +302,33 @@ int main() {
 		glUniform3f(u_viewPos, viewPos[0], viewPos[1], viewPos[2]);
 		glUniform1i(u_lighting_position, enable_lighting);
 		glUniform3f(u_lightPos, light_pos[0], light_pos[1], light_pos[2]);
+		glUniform1i(use_tex_position, false);
 
-		for (int i = 0; i < 11; i++)
-		{
-			if (i >= 5 == 0)
-			{
-				glUniform1i(use_tex_position, true);
-			}
-			else
-			{
-				glUniform1i(use_tex_position, false);
-			}
-			glm::mat4 model;
-			glm::mat4 mvp;
-			if (i == 10)
-			{
-				glUniform3f(color_position, 1.0f, 1.0f, 1.0f);
-				model = glm::translate(glm::mat4(1.0f), light_pos);
-				model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f));
-				mvp = proj * view * model;
-			}
-			else
-			{
-				glUniform3f(color_position, 0.2f, 0.6f, 0.2f);
-				model = glm::translate(glm::mat4(1.0f), translation);
-				model = model * glm::translate(glm::mat4(1.0f), cubePositions[i]);
-				model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-				glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-				rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(20.0f * i), glm::vec3(1.0f, 1.0f, 1.0f));
-				model = model * rotate;
+		glm::mat4 model;
+		glm::mat4 mvp;
 
-				mvp = proj * view * model;
-			}
-			
-			glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
-			glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
+		glUniform3f(color_position, 0.2f, 0.6f, 0.2f);
+		model = glm::translate(glm::mat4(1.0f), translation);
+		model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+		glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = model * rotate;
 
-			renderer.Draw(va, ProgramID, vertices.size() / 8); //count of triangles! vertices.size() = 3v + 3vn + 2vt
-		}
+		mvp = proj * view * model;
+
+		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
+
+		renderer.Draw(va, ProgramID, vertices.size() / 8);
+
+		glUniform3f(color_position, 1.0f, 1.0f, 1.0f);
+		model = glm::translate(glm::mat4(1.0f), light_pos);
+		model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f));
+		mvp = proj * view * model;
+
+		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
+
+		renderer.Draw(va, ProgramID, vertices.size() / 8);
 
 		OpenGlError();
 
@@ -363,11 +336,11 @@ int main() {
 		{
 			ImGui_ImplGlfwGL3_NewFrame();
 
-			ImGui::Begin("Debug", 0);
+			ImGui::Begin("Object movement", 0, ImGuiWindowFlags_NoMove);
 			ImGui::SliderFloat3("Translation", &translation.x, -5.0f, 5.0f);
 			ImGui::SliderFloat3("Light Pos", &light_pos[0], -5.0f, 5.0f);
 			ImGui::SliderFloat("Rotation", &angle, -360, 360);
-			if (ImGui::Button("Hide"))
+			if (ImGui::Button("Debug off"))
 			{
 				debugMode = false;
 				glfwSetCursorPosCallback(window, MouseCallback);
@@ -381,6 +354,15 @@ int main() {
 			}
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+
+			//ImGui::ShowDemoWindow();
+
+			ImGui::Begin("Camera", 0, ImGuiWindowFlags_NoMove);
+			ImGui::InputFloat("Movement speed", &camera.MovementSpeed, 0.01f, 1.0f);
+			ImGui::InputFloat("Position X", &camera.Position[0], 0.01f, 1.0f);
+			ImGui::InputFloat("Position Y", &camera.Position[1], 0.01f, 1.0f);
+			ImGui::InputFloat("Position Z", &camera.Position[2], 0.01f, 1.0f);
 			ImGui::End();
 
 			ImGui::Render();
