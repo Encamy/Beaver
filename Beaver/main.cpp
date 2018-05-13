@@ -38,8 +38,8 @@
 #define LOG_INFO(a) LOG_INFO(a, __func__);
 
 GLFWwindow* window;
-int mainScreenWidth = 800, mainScreenHeight = 800;
-int subScreenWidth = 400, subScreenHeight = 400;
+int mainScreenWidth = 600, mainScreenHeight = 600;
+int subScreenWidth = 300, subScreenHeight = 300;
 
 float lastX = mainScreenWidth / 2.0f;
 float lastY = mainScreenHeight / 2.0f;
@@ -630,8 +630,8 @@ int main()
 		glDisable(GL_DEPTH_TEST);
 		glViewport(0, 0, 100, 100);
 		proj = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, -100.0f, 100.0f);
-		view = camera.GetViewMatrix();
 		view = glm::lookAt(camera.GetPos(), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		//view = glm::lookAt(camera.GetPos(), camera.Front, glm::vec3(0, 1, 0));
 
 		glUniform1i(u_enableLighting, false);
 
