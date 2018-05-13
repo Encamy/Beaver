@@ -128,7 +128,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	window = glfwCreateWindow(mainScreenWidth+ subScreenWidth, mainScreenHeight, "TEST", nullptr, nullptr);
+	window = glfwCreateWindow(mainScreenWidth + subScreenWidth, mainScreenHeight, "TEST", nullptr, nullptr);
 	if (window == nullptr)
 	{
 		log.LOG_FATAL("Failed to create GLFW window");
@@ -186,6 +186,18 @@ int main()
 
 	std::vector<GLfloat> sphereVertices;
 	std::vector<GLfloat> cubeVertices;
+
+	GLfloat guiVertices[] = {
+		mainScreenWidth,					mainScreenHeight, 0,
+		mainScreenWidth,					0,				  0,
+		mainScreenWidth + subScreenWidth,	subScreenHeight,  0,
+		mainScreenWidth,					subScreenHeight,  0,
+	};
+
+	GLuint guiElements[] = {
+		0, 1,
+		2, 3,
+	};
 
 	GLfloat coordinateVertices[] = {
 		0.0f,	0.0f,		0.0f,	0, 0, 0,
@@ -287,42 +299,48 @@ int main()
 	}
 
 	GLuint vao;
-	glGenVertexArrays(3, &vao);
+	glGenVertexArrays(4, &vao);
 	glBindVertexArray(vao);
 
 	//cube
 	VertexArray vaCube;
 	VertexBuffer vbCube(&cubeVertices[0], cubeVertices.size()*sizeof(GLfloat));
 
-	VertexBufferLayout cubeLayout;
+	VertexBufferLayout objLayout;
 
-	cubeLayout.Push<float>(3);
-	cubeLayout.Push<float>(3);
-	cubeLayout.Push<float>(2);
-	vaCube.AddBuffer(vbCube, cubeLayout);
+	objLayout.Push<float>(3);
+	objLayout.Push<float>(3);
+	objLayout.Push<float>(2);
+	vaCube.AddBuffer(vbCube, objLayout);
 
 	//coordinate system
 	VertexArray vaCoordinates;
 	VertexBuffer vbCoordinates(coordinateVertices, sizeof(coordinateVertices));
 
-	VertexBufferLayout coordinateLayout;
+	VertexBufferLayout linesLayout;
 
-	coordinateLayout.Push<float>(3);
-	coordinateLayout.Push<float>(3);
-	vaCoordinates.AddBuffer(vbCoordinates, coordinateLayout);
+	linesLayout.Push<float>(3);
+	linesLayout.Push<float>(3);
+	vaCoordinates.AddBuffer(vbCoordinates, linesLayout);
 
 	IndexBuffer ib(coordinateElements, 22);
 
+	//gui lines
+	VertexArray vaGui;
+	VertexBuffer vbGui(guiVertices, sizeof(guiVertices));
+
+	VertexBufferLayout guiLayout;
+	guiLayout.Push<float>(3);
+
+	vaGui.AddBuffer(vbGui, guiLayout);
+
+	IndexBuffer ibGui(guiElements, 4);
+	
 	//sphere
 	VertexArray vaSphere;
 	VertexBuffer vbSphere(&sphereVertices[0], sphereVertices.size() * sizeof(GLfloat));
 
-	VertexBufferLayout sphereLayout;
-
-	sphereLayout.Push<float>(3);
-	sphereLayout.Push<float>(3);
-	sphereLayout.Push<float>(2);
-	vaSphere.AddBuffer(vbSphere, sphereLayout);
+	vaSphere.AddBuffer(vbSphere, objLayout);
 
 	glClearColor(0, 0.5, 1, 1);
 	GLuint ProgramID = LoadShaders("res/shaders/Vertex.shader", "res/shaders/Fragment.shader");
@@ -351,7 +369,7 @@ int main()
 	ImGui::StyleColorsDark();
 
 	glm::vec3 translation(0, 0, 0);
-	glm::vec3 lightPosition(0.0f, 0.0f, 2.0f);
+	glm::vec3 lightPosition(1.0f, 0.0f, 2.0f);
 
 	glm::vec3 viewPosTop(0.0f, 5.0f, 0.0f);
 
@@ -493,12 +511,12 @@ int main()
 		ImGui::Text("Main");
 		ImGui::End();
 
-		ImGui::SetNextWindowPos(ImVec2(mainScreenWidth, 10));
+		ImGui::SetNextWindowPos(ImVec2(mainScreenWidth+10, 10));
 		ImGui::Begin("top", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
 		ImGui::Text("Top");
 		ImGui::End();
 
-		ImGui::SetNextWindowPos(ImVec2(mainScreenWidth, subScreenHeight+10));
+		ImGui::SetNextWindowPos(ImVec2(mainScreenWidth+10, subScreenHeight+10));
 		ImGui::Begin("front", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
 		ImGui::Text("Front");
 		ImGui::End();
@@ -622,9 +640,22 @@ int main()
 		mvp = proj * view * model;
 
 		glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
-		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 		glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
 		renderer.DrawLines(vaCoordinates, ib, ProgramID);
+
+		//gui
+		glViewport(0, 0, mainScreenWidth + subScreenWidth, mainScreenHeight);
+		proj = glm::ortho(0.0f, (float)(mainScreenWidth+subScreenWidth), 0.0f, (float)mainScreenHeight, -100.0f, 100.0f);
+		view = glm::lookAt(glm::vec3(0, 0, 7), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+
+		mvp = proj * view * model;
+
+		glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
+		glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
+
+		renderer.DrawLines(vaGui, ibGui, ProgramID);
+
 		glEnable(GL_DEPTH_TEST);
 
 		ImGui::Render();
