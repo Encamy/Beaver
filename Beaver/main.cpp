@@ -99,21 +99,6 @@ void commandsListener()
 	while (true)
 	{
 		std::getline(std::cin, cmd);
-		log.LOG_INFO(cmd);
-
-		if (cmd == "debug")
-		{
-			debugMode = !debugMode;
-			if (debugMode)
-			{
-
-			}
-			else
-			{
-				glfwSetKeyCallback(window, key_callback);
-				glfwSetCursorPosCallback(window, MouseCallback);
-			}
-		}
 	}
 }
 
@@ -187,71 +172,110 @@ int main() {
 		glm::vec3(-1.3f,  1.0f, -1.5f)
 	};
 	
-	std::string inputfile = "res/obj/cube.obj";
-	tinyobj::attrib_t attrib;
+	tinyobj::attrib_t cubeAttrib;
+	tinyobj::attrib_t sphereAttrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
-	std::vector<GLfloat> vertices;
-	std::vector<GLfloat> normals;
-	std::vector<GLfloat> tex_coords;
+	std::vector<GLfloat> cubeVertices;
+	std::vector<GLfloat> sphereVertices;
 
 	std::string err;
-	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, inputfile.c_str());
+	tinyobj::LoadObj(&sphereAttrib, &shapes, &materials, &err, "res/obj/sphere.obj");
 
-	if (!err.empty()) {
+	if (!err.empty())
+	{
 		log.LOG_ERROR(err);
 	}
 
-	for (size_t s = 0; s < shapes.size(); s++) {
+	for (size_t s = 0; s < shapes.size(); s++)
+	{
 		size_t index_offset = 0;
-		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
+		{
 			int fv = shapes[s].mesh.num_face_vertices[f];
 
-			for (size_t v = 0; v < fv; v++) {
+			for (size_t v = 0; v < fv; v++)
+			{
 				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 
-				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 0]);
-				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 1]);
-				vertices.push_back(attrib.vertices[3 * idx.vertex_index + 2]);
-				vertices.push_back(attrib.normals[3 * idx.normal_index + 0]);
-				vertices.push_back(attrib.normals[3 * idx.normal_index + 1]);
-				vertices.push_back(attrib.normals[3 * idx.normal_index + 2]);
-				vertices.push_back(attrib.texcoords[2 * idx.texcoord_index + 0]);
-				vertices.push_back(attrib.texcoords[2 * idx.texcoord_index + 1]);
+				sphereVertices.push_back(sphereAttrib.vertices[3 * idx.vertex_index + 0]);
+				sphereVertices.push_back(sphereAttrib.vertices[3 * idx.vertex_index + 1]);
+				sphereVertices.push_back(sphereAttrib.vertices[3 * idx.vertex_index + 2]);
+				sphereVertices.push_back(sphereAttrib.normals[3 * idx.normal_index + 0]);
+				sphereVertices.push_back(sphereAttrib.normals[3 * idx.normal_index + 1]);
+				sphereVertices.push_back(sphereAttrib.normals[3 * idx.normal_index + 2]);
+				sphereVertices.push_back(sphereAttrib.texcoords[2 * idx.texcoord_index + 0]);
+				sphereVertices.push_back(sphereAttrib.texcoords[2 * idx.texcoord_index + 1]);
+			}
+			index_offset += fv;
+		}
+	}
+
+	tinyobj::LoadObj(&cubeAttrib, &shapes, &materials, &err, "res/obj/cube.obj");
+
+	if (!err.empty())
+	{
+		log.LOG_ERROR(err);
+	}
+
+	for (size_t s = 0; s < shapes.size(); s++)
+	{
+		size_t index_offset = 0;
+		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
+		{
+			int fv = shapes[s].mesh.num_face_vertices[f];
+
+			for (size_t v = 0; v < fv; v++)
+			{
+				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+
+				cubeVertices.push_back(cubeAttrib.vertices[3 * idx.vertex_index + 0]);
+				cubeVertices.push_back(cubeAttrib.vertices[3 * idx.vertex_index + 1]);
+				cubeVertices.push_back(cubeAttrib.vertices[3 * idx.vertex_index + 2]);
+				cubeVertices.push_back(cubeAttrib.normals[3 * idx.normal_index + 0]);
+				cubeVertices.push_back(cubeAttrib.normals[3 * idx.normal_index + 1]);
+				cubeVertices.push_back(cubeAttrib.normals[3 * idx.normal_index + 2]);
+				cubeVertices.push_back(cubeAttrib.texcoords[2 * idx.texcoord_index + 0]);
+				cubeVertices.push_back(cubeAttrib.texcoords[2 * idx.texcoord_index + 1]);
 			}
 			index_offset += fv;
 		}
 	}
 
 	GLuint vao;
-	glGenVertexArrays(1, &vao);
+	glGenVertexArrays(2, &vao);
 	glBindVertexArray(vao);
 
-	VertexArray va;
-	VertexBuffer vb(&vertices[0], vertices.size()*sizeof(GLfloat));
+	VertexArray vaCube;
+	VertexBuffer cubeVb(&cubeVertices[0], cubeVertices.size()*sizeof(GLfloat));
 
-	VertexBufferLayout layout;
+	VertexBufferLayout objLayout;
 
-	layout.Push<float>(3);
-	layout.Push<float>(3);
-	layout.Push<float>(2);
-	va.AddBuffer(vb, layout);
+	objLayout.Push<float>(3);
+	objLayout.Push<float>(3);
+	objLayout.Push<float>(2);
+	vaCube.AddBuffer(cubeVb, objLayout);
+
+	VertexArray vaSphere;
+	VertexBuffer sphereVb(&sphereVertices[0], sphereVertices.size() * sizeof(GLfloat));
+
+	vaSphere.AddBuffer(sphereVb, objLayout);
 	
 	glClearColor(0, 0.5, 1, 1);
 	GLuint ProgramID = LoadShaders("res/shaders/Vertex.shader", "res/shaders/Fragment.shader");
 
-	int color_position = glGetUniformLocation(ProgramID, "u_Color");
-	int MVP_position = glGetUniformLocation(ProgramID, "u_MVP");
-	int use_tex_position = glGetUniformLocation(ProgramID, "use_tex");
-	int u_lighting_position = glGetUniformLocation(ProgramID, "u_enable_lighting");
+	int u_color = glGetUniformLocation(ProgramID, "u_Color");
+	int u_MVP = glGetUniformLocation(ProgramID, "u_MVP");
+	int u_useTextures = glGetUniformLocation(ProgramID, "use_tex");
+	int u_enableLighting = glGetUniformLocation(ProgramID, "u_enable_lighting");
 	int u_lightPos = glGetUniformLocation(ProgramID, "lightPos");
 	int u_model = glGetUniformLocation(ProgramID, "model");
 	int u_viewPos = glGetUniformLocation(ProgramID, "viewPos");
 
-	va.UnBind();
+	vaCube.UnBind();
 	glUseProgram(0);
-	vb.UnBind();
+	cubeVb.UnBind();
 
 	//Texture texture("res/images/brick3K/Tiles05_COL_VAR1_3K.jpg");
 	Texture texture("res/images/brick1K/Tiles05_COL_VAR1_1K.jpg");
@@ -281,33 +305,17 @@ int main() {
 		renderer.Clear();
 
 		if (keys[GLFW_KEY_W] == true)
-			camera.ProcessKeyboard(FORWARD, 0.13f);
+			camera.ProcessKeyboard(FORWARD, camera.MovementSpeed);
 		if (keys[GLFW_KEY_S] == true)
-			camera.ProcessKeyboard(BACKWARD, 0.13f);
+			camera.ProcessKeyboard(BACKWARD, camera.MovementSpeed);
 		if (keys[GLFW_KEY_A] == true)
-			camera.ProcessKeyboard(LEFT, 0.13f);
+			camera.ProcessKeyboard(LEFT, camera.MovementSpeed);
 		if (keys[GLFW_KEY_D] == true)
-			camera.ProcessKeyboard(RIGHT, 0.13f);
+			camera.ProcessKeyboard(RIGHT, camera.MovementSpeed);
 		if (keys[GLFW_KEY_SPACE])
-			camera.ProcessKeyboard(UP, 0.13f);
+			camera.ProcessKeyboard(UP, camera.MovementSpeed);
 		if (keys[GLFW_KEY_LEFT_SHIFT])
-			camera.ProcessKeyboard(DOWN, 0.13f);
-		if (keys[GLFW_KEY_KP_ADD])
-			angle += 1.0f;
-		if (keys[GLFW_KEY_KP_SUBTRACT])
-			angle -= 1.0f;
-		if (keys[GLFW_KEY_KP_6])
-			light_pos[0] += 0.1f;
-		if (keys[GLFW_KEY_KP_4])
-			light_pos[0] -= 0.1f;
-		if (keys[GLFW_KEY_KP_8])
-			light_pos[1] += 0.1f;
-		if (keys[GLFW_KEY_KP_2])
-			light_pos[1] -= 0.1f;
-		if (keys[GLFW_KEY_KP_3])
-			light_pos[2] += 0.1f;
-		if (keys[GLFW_KEY_KP_9])
-			light_pos[2] -= 0.1f;
+			camera.ProcessKeyboard(DOWN, camera.MovementSpeed);
 
 		glUseProgram(ProgramID);
 
@@ -316,31 +324,31 @@ int main() {
 
 		glm::vec3 viewPos = camera.GetPos();
 		glUniform3f(u_viewPos, viewPos[0], viewPos[1], viewPos[2]);
-		glUniform1i(u_lighting_position, enable_lighting);
+		glUniform1i(u_enableLighting, enable_lighting);
 		glUniform3f(u_lightPos, light_pos[0], light_pos[1], light_pos[2]);
 
 		for (int i = 0; i < 11; i++)
 		{
-			if (i >= 5 == 0)
+			if (i >= 5)
 			{
-				glUniform1i(use_tex_position, true);
+				glUniform1i(u_useTextures, true);
 			}
 			else
 			{
-				glUniform1i(use_tex_position, false);
+				glUniform1i(u_useTextures, false);
 			}
 			glm::mat4 model;
 			glm::mat4 mvp;
 			if (i == 10)
 			{
-				glUniform3f(color_position, 1.0f, 1.0f, 1.0f);
+				glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
 				model = glm::translate(glm::mat4(1.0f), light_pos);
 				model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f));
 				mvp = proj * view * model;
 			}
 			else
 			{
-				glUniform3f(color_position, 0.2f, 0.6f, 0.2f);
+				glUniform3f(u_color, 0.2f, 0.6f, 0.2f);
 				model = glm::translate(glm::mat4(1.0f), translation);
 				model = model * glm::translate(glm::mat4(1.0f), cubePositions[i]);
 				model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
@@ -351,10 +359,13 @@ int main() {
 				mvp = proj * view * model;
 			}
 			
-			glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
+			glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
 			glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-			renderer.Draw(va, ProgramID, vertices.size() / 8); //count of triangles! vertices.size() = 3v + 3vn + 2vt
+			if (i >= 5)
+				renderer.Draw(vaCube, ProgramID, cubeVertices.size() / 8); //count of triangles! vertices.size() = 3v + 3vn + 2vt
+			else
+				renderer.Draw(vaSphere, ProgramID, sphereVertices.size() / 8); //count of triangles! vertices.size() = 3v + 3vn + 2vt
 		}
 
 		OpenGlError();
