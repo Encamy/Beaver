@@ -50,6 +50,11 @@ bool debugMode = false;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
+enum object {
+	cube,
+	sphere,
+};
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
 	if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
@@ -120,6 +125,7 @@ void commandsListener()
 
 
 int main() {
+	object obj = cube;
 	bool enable_lighting = true;
 	log.LOG_TRACE("Creating command listener");
 	std::thread listenerThread(commandsListener);
@@ -173,6 +179,7 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 
 	glEnable(GL_BLEND);
+	//glEnable(GL_CULL_FACE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glm::vec3 cubePositions[] = {
@@ -188,14 +195,13 @@ int main() {
 		glm::vec3(-1.3f,  1.0f, -1.5f)
 	};
 	
-	std::string inputfile = "res/obj/cube.obj";
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
+	tinyobj::attrib_t sphereAttrib;
 
+	std::vector<GLfloat> sphereVertices;
 	std::vector<GLfloat> vertices;
-	std::vector<GLfloat> normals;
-	std::vector<GLfloat> tex_coords;
 
 	GLfloat coordinateVertices[] = {
 		0.0f,	0.0f,		0.0f,	0, 0, 0,
@@ -232,13 +238,36 @@ int main() {
 		13, 14,
 		14, 15
 	};
-
+	
 	std::string err;
-	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, inputfile.c_str());
+	tinyobj::LoadObj(&sphereAttrib, &shapes, &materials, &err, "res/obj/sphere.obj");
 
 	if (!err.empty()) {
 		log.LOG_ERROR(err);
 	}
+
+	for (size_t s = 0; s < shapes.size(); s++) {
+		size_t index_offset = 0;
+		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+			int fv = shapes[s].mesh.num_face_vertices[f];
+
+			for (size_t v = 0; v < fv; v++) {
+				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+
+				sphereVertices.push_back(sphereAttrib.vertices[3 * idx.vertex_index + 0]);
+				sphereVertices.push_back(sphereAttrib.vertices[3 * idx.vertex_index + 1]);
+				sphereVertices.push_back(sphereAttrib.vertices[3 * idx.vertex_index + 2]);
+				sphereVertices.push_back(sphereAttrib.normals[3 * idx.normal_index + 0]);
+				sphereVertices.push_back(sphereAttrib.normals[3 * idx.normal_index + 1]);
+				sphereVertices.push_back(sphereAttrib.normals[3 * idx.normal_index + 2]);
+				sphereVertices.push_back(sphereAttrib.texcoords[2 * idx.texcoord_index + 0]);
+				sphereVertices.push_back(sphereAttrib.texcoords[2 * idx.texcoord_index + 1]);
+			}
+			index_offset += fv;
+		}
+	}
+
+	tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "res/obj/cube.obj");
 
 	for (size_t s = 0; s < shapes.size(); s++) {
 		size_t index_offset = 0;
@@ -262,9 +291,10 @@ int main() {
 	}
 
 	GLuint vao;
-	glGenVertexArrays(2, &vao);
+	glGenVertexArrays(3, &vao);
 	glBindVertexArray(vao);
 
+	//cube
 	VertexArray va;
 	VertexBuffer vb(&vertices[0], vertices.size()*sizeof(GLfloat));
 
@@ -275,6 +305,7 @@ int main() {
 	layout.Push<float>(2);
 	va.AddBuffer(vb, layout);
 
+	//coordinate system
 	VertexArray vaCoordinates;
 	VertexBuffer vbCoordinates(coordinateVertices, sizeof(coordinateVertices));
 
@@ -285,6 +316,17 @@ int main() {
 	vaCoordinates.AddBuffer(vbCoordinates, coordinateLayout);
 
 	IndexBuffer ib(coordinateElements, 22);
+
+	//sphere
+	VertexArray vaSphere;
+	VertexBuffer vbSphere(&sphereVertices[0], sphereVertices.size() * sizeof(GLfloat));
+
+	VertexBufferLayout layoutSphere;
+
+	layoutSphere.Push<float>(3);
+	layoutSphere.Push<float>(3);
+	layoutSphere.Push<float>(2);
+	vaSphere.AddBuffer(vbSphere, layoutSphere);
 
 	glClearColor(0, 0.5, 1, 1);
 	GLuint ProgramID = LoadShaders("res/shaders/Vertex.shader", "res/shaders/Fragment.shader");
@@ -313,7 +355,7 @@ int main() {
 	ImGui::StyleColorsDark();
 
 	glm::vec3 translation(0, 0, 0);
-	glm::vec3 light_pos(2.0f, 0.0f, 2.0f);
+	glm::vec3 light_pos(0.0f, 0.0f, 2.0f);
 
 	glm::vec3 viewPosTop(0.0f, 5.0f, 0.0f);
 	glm::vec3 viewAtTop(0.0f, 0.0f, 0.0f);
@@ -361,6 +403,7 @@ int main() {
 		glm::mat4 model;
 		glm::mat4 mvp;
 
+		//cube
 		glUniform3f(color_position, 0.2f, 0.6f, 0.2f);
 		model = glm::translate(glm::mat4(1.0f), translation);
 		model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
@@ -372,8 +415,15 @@ int main() {
 		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-		renderer.Draw(va, ProgramID, vertices.size() / 8);
+		switch (obj)
+		{
+		case cube: renderer.Draw(va, ProgramID, vertices.size() / 8);
+			break;
+		case sphere: renderer.Draw(vaSphere, ProgramID, sphereVertices.size() / 8);
+			break;
+		}
 
+		//light
 		glUniform3f(color_position, 1.0f, 1.0f, 1.0f);
 		model = glm::translate(glm::mat4(1.0f), light_pos);
 		model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
@@ -382,7 +432,7 @@ int main() {
 		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-		renderer.Draw(va, ProgramID, vertices.size() / 8);
+		renderer.Draw(vaSphere, ProgramID, sphereVertices.size() / 8);
 
 		OpenGlError();
 		ImGui_ImplGlfwGL3_NewFrame();
@@ -391,13 +441,22 @@ int main() {
 			
 
 			ImGui::SetNextWindowPos(ImVec2(10, 50));
-			ImGui::SetNextWindowSize(ImVec2(450, 200));
+			ImGui::SetNextWindowSize(ImVec2(450, 220));
 			ImGui::Begin("Object movement", 0, ImGuiWindowFlags_NoMove);
 			ImGui::SliderFloat3("Translation", &translation.x, -5.0f, 5.0f);
 			ImGui::InputFloat("Light Position X", &light_pos[0], 0.01f, 1.0f);
 			ImGui::InputFloat("Light Position Y", &light_pos[1], 0.01f, 1.0f);
 			ImGui::InputFloat("Light Position Z", &light_pos[2], 0.01f, 1.0f);
 			ImGui::SliderFloat("Rotation", &angle, -360, 360);
+			if (ImGui::Button("Cube"))
+			{
+				obj = cube;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Sphere"))
+			{
+				obj = sphere;
+			}
 			if (ImGui::Button("Debug off"))
 			{
 				debugMode = false;
@@ -416,7 +475,7 @@ int main() {
 
 			//ImGui::ShowDemoWindow();
 
-			ImGui::SetNextWindowPos(ImVec2(10, 260));
+			ImGui::SetNextWindowPos(ImVec2(10, 280));
 			ImGui::SetNextWindowSize(ImVec2(350, 150));
 			ImGui::Begin("Camera", 0, ImGuiWindowFlags_NoMove);
 			ImGui::InputFloat("Movement speed", &camera.MovementSpeed, 0.01f, 1.0f);
@@ -455,7 +514,7 @@ int main() {
 		glViewport(main_screen_width, sub_screen_height, sub_screen_width, sub_screen_height);
 
 		proj = glm::perspective(glm::radians(45.0f), (float)sub_screen_width / (float)sub_screen_height, 0.1f, 100.0f);
-		view = glm::mat4(glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(0, -1, 0, 0), glm::vec4(0, 0, -7, 1));
+		view = glm::lookAt(glm::vec3(0, 7, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, -1));
 
 		viewPos = camera.GetPos();
 		glUniform3f(u_viewPos, viewPos[0], viewPos[1], viewPos[2]);
@@ -475,7 +534,13 @@ int main() {
 		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-		renderer.Draw(va, ProgramID, vertices.size() / 8);
+		switch (obj)
+		{
+		case cube: renderer.Draw(va, ProgramID, vertices.size() / 8);
+			break;
+		case sphere: renderer.Draw(vaSphere, ProgramID, sphereVertices.size() / 8);
+			break;
+		}
 
 		//light
 		glUniform3f(color_position, 1.0f, 1.0f, 1.0f);
@@ -486,7 +551,7 @@ int main() {
 		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-		renderer.Draw(va, ProgramID, vertices.size() / 8);
+		renderer.Draw(vaSphere, ProgramID, sphereVertices.size() / 8);
 
 		//camera
 		glUniform3f(color_position, 1.0f, 0.0f, 0.0f);
@@ -503,12 +568,10 @@ int main() {
 		glViewport(main_screen_width, 0, sub_screen_width, sub_screen_height);
 
 		proj = glm::perspective(glm::radians(45.0f), (float)sub_screen_width / (float)sub_screen_height, 0.1f, 100.0f);
-		view = glm::mat4(glm::vec4(1, 0, 0, 0), glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(0, 0, -7, 1));
+		//proj = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, -2.0f, 2.0f);
+		view = glm::lookAt(glm::vec3(0, 0, 7), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
-		viewPos = camera.GetPos();
-		glUniform3f(u_viewPos, viewPos[0], viewPos[1], viewPos[2]);
 		glUniform1i(u_lighting_position, false);
-		glUniform3f(u_lightPos, light_pos[0], light_pos[1], light_pos[2]);
 		glUniform1i(use_tex_position, false);
 
 		//main cube
@@ -523,7 +586,13 @@ int main() {
 		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-		renderer.Draw(va, ProgramID, vertices.size() / 8);
+		switch (obj)
+		{
+		case cube: renderer.Draw(va, ProgramID, vertices.size() / 8);
+			break;
+		case sphere: renderer.Draw(vaSphere, ProgramID, sphereVertices.size() / 8);
+			break;
+		}
 
 		//light
 		glUniform3f(color_position, 1.0f, 1.0f, 1.0f);
@@ -534,7 +603,7 @@ int main() {
 		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
 		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-		renderer.Draw(va, ProgramID, vertices.size() / 8);
+		renderer.Draw(vaSphere, ProgramID, sphereVertices.size() / 8);
 
 		//camera
 		glUniform3f(color_position, 1.0f, 0.0f, 0.0f);
