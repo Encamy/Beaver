@@ -13,6 +13,11 @@ uniform bool u_enable_lighting;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 
+uniform bool useSpotLight;
+uniform vec3 lightDirection;
+uniform float lightCutOff;
+uniform float lightOuterCutOff;
+
 void textureFrag()
 {
 	vec4 texColor = texture(u_Texture, v_TexCoord);
@@ -53,7 +58,17 @@ void main()
 		vec3 viewDir = normalize(viewPos - FragPos);
 		vec3 reflectDir = reflect(-lightDir, norm);
 		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-		vec3 specular = specularStrength*spec*lightColor;
+		vec3 specular = specularStrength * spec * lightColor;
+
+		// spotlight (soft edges)
+		if (useSpotLight)
+		{
+			float theta = dot(lightDir, normalize(-lightDirection));
+			float epsilon = (lightCutOff - lightOuterCutOff);
+			float intensity = clamp((theta - lightOuterCutOff) / epsilon, 0.0, 1.0);
+			diffuse *= intensity;
+			specular *= intensity;
+		}
 
 		vec4 result = vec4((ambient + diffuse + specular), 1.0f) * color;
 		color = result;
