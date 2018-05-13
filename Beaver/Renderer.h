@@ -18,6 +18,7 @@ class Renderer {
 public:
 	void Draw(VertexArray& va, IndexBuffer& ib, int ShaderID);
 	void Draw(VertexArray& va, int ShaderID, int count);
+	void DrawLines(VertexArray& va, IndexBuffer& ib, int ShaderID);
 	void Clear();
 
 private:

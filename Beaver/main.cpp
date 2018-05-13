@@ -197,6 +197,42 @@ int main() {
 	std::vector<GLfloat> normals;
 	std::vector<GLfloat> tex_coords;
 
+	GLfloat coordinateVertices[] = {
+		0.0f,	0.0f,		0.0f,	0, 0, 0,
+		1.0f,	0.0f,		0.0f,	1, 0, 0,
+		0.0f,	1.0f,		0.0f,	0, 1, 0,
+		0.0f,	0.0f,		1.0f,	0, 0, 0,
+
+		1.0f,   -0.1f,		0.0f,	0, 0, 0,		//X
+		1.4f,   -0.5f,		0.0f,	0, 0, 0,
+		1.4f,   -0.1f,		0.0f,	0, 0, 0,
+		1.0f,   -0.5f,		0.0f,	0, 0, 0,
+
+		0.0f,	1.1f,		0.0f,	0, 0, 0,		//Y
+		0.0f,	1.3f,		0.0f,	0, 0, 0,
+		0.2f,	1.5f,		0.0f,	0, 0, 0,
+	   -0.2f,	1.5f,		0.0f,	0, 0, 0,
+
+	   0.0f,	-0.1f,		1.5f,	0, 0, 0,		//Z
+	   0.0f,	-0.1f,		1.1f,	0, 0, 0,
+	   0.0f,	-0.5f,		1.5f,	0, 0, 0,
+	   0.0f,	-0.5f,		1.1f,	0, 0, 0,
+	};
+
+	GLuint coordinateElements[] = {
+		0, 1,
+		0, 2,
+		0, 3,
+		4, 5,
+		6, 7,
+		8, 9,
+		9, 10,
+		9, 11,
+		12, 13,
+		13, 14,
+		14, 15
+	};
+
 	std::string err;
 	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, inputfile.c_str());
 
@@ -226,7 +262,7 @@ int main() {
 	}
 
 	GLuint vao;
-	glGenVertexArrays(1, &vao);
+	glGenVertexArrays(2, &vao);
 	glBindVertexArray(vao);
 
 	VertexArray va;
@@ -238,7 +274,18 @@ int main() {
 	layout.Push<float>(3);
 	layout.Push<float>(2);
 	va.AddBuffer(vb, layout);
-	
+
+	VertexArray vaCoordinates;
+	VertexBuffer vbCoordinates(coordinateVertices, sizeof(coordinateVertices));
+
+	VertexBufferLayout coordinateLayout;
+
+	coordinateLayout.Push<float>(3);
+	coordinateLayout.Push<float>(3);
+	vaCoordinates.AddBuffer(vbCoordinates, coordinateLayout);
+
+	IndexBuffer ib(coordinateElements, 22);
+
 	glClearColor(0, 0.5, 1, 1);
 	GLuint ProgramID = LoadShaders("res/shaders/Vertex.shader", "res/shaders/Fragment.shader");
 
@@ -300,6 +347,7 @@ int main() {
 			camera.ProcessKeyboard(DOWN, camera.MovementSpeed);
 
 		glUseProgram(ProgramID);
+
 
 		glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)main_screen_width / (float)main_screen_height, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
@@ -377,15 +425,15 @@ int main() {
 			ImGui::InputFloat("Position Z", &camera.Position[2], 0.01f, 1.0f);
 			ImGui::End();
 
-			ImGui::SetNextWindowPos(ImVec2(10, 420));
+		/*	ImGui::SetNextWindowPos(ImVec2(10, 420));
 			ImGui::Begin("Top view", 0);
 			ImGui::SliderFloat3("Camera pos", &viewPosTop[0], -5.0f, 5.0f);
 			ImGui::SliderFloat3("View At", &viewAtTop[0], -2.0f, 2.0f);
-			if (ImGui::Button("turn of debug"))
+			if (ImGui::Button("Break execution"))
 			{
 				debugMode = true;
 			}
-			ImGui::End();
+			ImGui::End();*/
 		}
 
 		ImGui::SetNextWindowPos(ImVec2(10, 10));
@@ -489,7 +537,7 @@ int main() {
 		renderer.Draw(va, ProgramID, vertices.size() / 8);
 
 		//camera
-		glUniform3f(color_position, 1.0f, 1.0f, 1.0f);
+		glUniform3f(color_position, 1.0f, 0.0f, 0.0f);
 		model = glm::translate(glm::mat4(1.0f), camera.GetPos());
 		model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
 		mvp = proj * view * model;
@@ -498,6 +546,25 @@ int main() {
 		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
 		renderer.Draw(va, ProgramID, vertices.size() / 8);
+
+		//coordinate system
+		glDisable(GL_DEPTH_TEST);
+		glViewport(0, 0, 100, 100);
+		proj = glm::perspective(glm::radians(45.0f), (float)main_screen_width / (float)main_screen_height, 0.1f, 100.0f);
+		view = camera.GetViewMatrix();
+		view = glm::lookAt(camera.GetPos(), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+
+		glUniform1i(u_lighting_position, false);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+
+		mvp = proj * view * model;
+
+		glUniformMatrix4fv(MVP_position, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
+		glUniform3f(color_position, 1.0f, 1.0f, 1.0f);
+		renderer.DrawLines(vaCoordinates, ib, ProgramID);
+		glEnable(GL_DEPTH_TEST);
 
 		ImGui::Render();
 		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
