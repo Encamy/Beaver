@@ -72,30 +72,30 @@ void Logger::LOG(std::string input, std::string log_level, const char* caller)
 
 void Logger::LOG_FATAL(std::string input, const char *caller)
 {
-	LOG(input, "FATAL", caller);
+	__log__.LOG(input, "FATAL", caller);
 }
 
 void Logger::LOG_ERROR(std::string input, const char *caller)
 {
-	LOG(input, "ERROR", caller);
+	__log__.LOG(input, "ERROR", caller);
 }
 
 void Logger::LOG_WARNING(std::string input, const char *caller)
 {
-	LOG(input, "WARN ", caller);
+	__log__.LOG(input, "WARN ", caller);
 }
 
 void Logger::LOG_INFO(std::string input, const char *caller)
 {
-	LOG(input, "INFO ", caller);
+	__log__.LOG(input, "INFO ", caller);
 }
 
 void Logger::LOG_DEBUG(std::string input, const char *caller)
 {
-	LOG(input, "DEBUG", caller);
+	__log__.LOG(input, "DEBUG", caller);
 }
 
 void Logger::LOG_TRACE(std::string input, const char *caller)
 {
-	LOG(input, "TRACE", caller);
+	__log__.LOG(input, "TRACE", caller);
 }

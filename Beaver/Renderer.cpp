@@ -1,4 +1,11 @@
 #include "Renderer.h"
+#include <thread>
+
+#define log __log__
+#define LOG_TRACE(a) LOG_TRACE(a, __func__)
+#define LOG_FATAL(a) LOG_FATAL(a, __func__);
+#define LOG_ERROR(a) LOG_ERROR(a, __func__);
+#define LOG_INFO(a) LOG_INFO(a, __func__);
 
 void GlClearError()
 {
@@ -15,6 +22,54 @@ bool OpenGlError()
 		return true;
 	}
 	return false;
+}
+
+Renderer::Renderer(int width, int heigth, GLFWwindow **window)
+{
+	log.LOG_TRACE("Initializing glfw");
+
+	glfwInit();
+	glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+	*window = glfwCreateWindow(width, heigth, "TEST", nullptr, nullptr);
+	if (*window == nullptr)
+	{
+		log.LOG_FATAL("Failed to create GLFW window");
+		glfwTerminate();
+		throw;
+	}
+	glfwMakeContextCurrent(*window);
+
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK)
+	{
+		log.LOG_FATAL("Failed to create GLFW window");
+		throw;
+	}
+
+	log.LOG_TRACE("Initialization complete");
+	log.LOG_INFO("Renderer: " + std::string((char*)glGetString(GL_RENDERER)));
+	log.LOG_INFO("OpenGL version: " + std::string((char*)glGetString(GL_VERSION)));
+
+	glfwGetFramebufferSize(*window, &width, &heigth);
+
+	glViewport(0, 0, width, heigth);
+
+	glfwSwapInterval(1);
+
+	glEnable(GL_DEPTH_TEST);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+}
+
+Renderer::~Renderer()
+{
 }
 
 void Renderer::Draw(VertexArray& va, IndexBuffer& ib, int ShaderID)

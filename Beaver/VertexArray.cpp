@@ -3,12 +3,17 @@
 
 VertexArray::VertexArray()
 {
-	glGenVertexArrays(1, &m_RendererID);
+	//glGenVertexArrays(1, &m_RendererID);
 }
 
 VertexArray::~VertexArray()
 {
 	glDeleteVertexArrays(1, &m_RendererID);
+}
+
+void VertexArray::GenBuf()
+{
+	glGenVertexArrays(1, &m_RendererID);
 }
 
 void VertexArray::Bind()
