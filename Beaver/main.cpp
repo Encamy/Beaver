@@ -48,9 +48,9 @@ bool firstMouse = true;
 bool keys[1024];
 bool debugMode = false;
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 2.0f, 5.0f));
 
-std::vector<std::string> objs = { "landscape" };
+std::vector<std::string> objs = { "landscape", "house" };
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void MouseCallback(GLFWwindow *window, double xPos, double yPos);
@@ -96,9 +96,7 @@ int main() {
 	tinyobj::attrib_t cubeAttrib;
 	tinyobj::attrib_t sphereAttrib;
 	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-
-	
+	std::vector<tinyobj::material_t> materials;	
 
 	int i = 0;
 	for (auto it : objs)
@@ -108,6 +106,7 @@ int main() {
 		VertexArray *va;
 		va = new VertexArray;
 		std::vector<GLfloat> tempVertices;
+		log.LOG_TRACE("Loading texture \"res/images/" + it + ".png\"");
 		Texture *texture = new Texture("res/images/" + it + ".png");
 		textures.push_back(texture);
 
@@ -170,8 +169,6 @@ int main() {
 
 	glUseProgram(0);
 
-	//Texture texture("res/images/brick1K/Tiles05_COL_VAR1_1K.jpg");
-	//texture.Bind();
 	int texture_uniform = glGetUniformLocation(ProgramID, "u_Texture");
 	glUniform1i(texture_uniform, 0);
 
@@ -180,7 +177,7 @@ int main() {
 	ImGui::StyleColorsDark();
 
 	glm::vec3 translation(1, 1, 0);
-	glm::vec3 light_pos(2.0f, 2.0f, 2.0f);
+	glm::vec3 light_pos(-2.3f, 7.0f, 5.0f);
 	GLfloat angle = 0;
 
 	glfwSetKeyCallback(window, key_callback);
