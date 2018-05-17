@@ -50,7 +50,7 @@ bool debugMode = false;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
-std::vector<std::string> objs = { "cube", "sphere", "pyramid" };
+std::vector<std::string> objs = { "landscape" };
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void MouseCallback(GLFWwindow *window, double xPos, double yPos);
@@ -79,6 +79,7 @@ int main() {
 	std::vector<VertexArray*> vas;
 	std::vector<VertexBuffer*> vbs;
 	std::vector<tinyobj::attrib_t> attribs;
+	std::vector<Texture*> textures;
 
 	std::string err;
 
@@ -107,8 +108,11 @@ int main() {
 		VertexArray *va;
 		va = new VertexArray;
 		std::vector<GLfloat> tempVertices;
+		Texture *texture = new Texture("res/images/" + it + ".png");
+		textures.push_back(texture);
 
 		std::string path = "res/obj/" + it + ".obj";
+		log.LOG_TRACE("Loading object \"" + it + "\" from \"" + path + "\"");
 		
 		tinyobj::LoadObj(&cubeAttrib, &shapes, &materials, &err, path.c_str());
 
@@ -116,6 +120,8 @@ int main() {
 		{
 			log.LOG_ERROR(err);
 		}
+
+		log.LOG_TRACE("Object \"" + it + "\" loaded from file");
 
 		for (size_t s = 0; s < shapes.size(); s++)
 		{
@@ -148,6 +154,7 @@ int main() {
 		va->AddBuffer(*vb, objLayout);
 		vas.push_back(va);
 		i++;
+		log.LOG_TRACE("VB and VA are created for object \"" + it + "\"");
 	}
 	
 	glClearColor(0, 0.5, 1, 1);
@@ -163,8 +170,8 @@ int main() {
 
 	glUseProgram(0);
 
-	Texture texture("res/images/brick1K/Tiles05_COL_VAR1_1K.jpg");
-	texture.Bind();
+	//Texture texture("res/images/brick1K/Tiles05_COL_VAR1_1K.jpg");
+	//texture.Bind();
 	int texture_uniform = glGetUniformLocation(ProgramID, "u_Texture");
 	glUniform1i(texture_uniform, 0);
 
@@ -209,13 +216,13 @@ int main() {
 		glUniform1i(u_enableLighting, enable_lighting);
 		glUniform3f(u_lightPos, light_pos[0], light_pos[1], light_pos[2]);
 		glUniform1i(u_useTextures, true);
+		glUniform3f(u_color, 1.0, 1.0, 1.0);
 		glm::mat4 model;
 		glm::mat4 mvp;
 
 		for (int i = 0; i < objs.size(); i++)
 		{
 			model = glm::translate(glm::mat4(1.0f), translation);
-			model = model * glm::translate(glm::mat4(1.0f), glm::vec3(i*1.01, 0, 0));
 			glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
 			model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 			model = model * rotate;
@@ -224,6 +231,7 @@ int main() {
 			glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
 			glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
+			textures[i]->Bind();
 			renderer.Draw(*vas[i], ProgramID, vertices[i].size() / 8);
 		}
 
