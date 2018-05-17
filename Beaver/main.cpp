@@ -50,7 +50,7 @@ bool debugMode = false;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
-std::vector<std::string> objs = { "cube", "sphere" };
+std::vector<std::string> objs = { "cube", "sphere", "pyramid" };
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void MouseCallback(GLFWwindow *window, double xPos, double yPos);
@@ -76,8 +76,8 @@ int main() {
 	}
 
 	std::vector<std::vector<GLfloat>> vertices;
-	std::vector<VertexArray> vas;
-	std::vector<VertexBuffer> vbs;
+	std::vector<VertexArray*> vas;
+	std::vector<VertexBuffer*> vbs;
 	std::vector<tinyobj::attrib_t> attribs;
 
 	std::string err;
@@ -97,14 +97,16 @@ int main() {
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
-	std::vector<GLfloat> tempVertices;
+	
 
+	int i = 0;
 	for (auto it : objs)
 	{
-		VertexBuffer vb;
-		vbs.push_back(vb);
-		VertexArray va;
-		vas.push_back(va);
+		VertexBuffer *vb;
+		vb = new VertexBuffer;
+		VertexArray *va;
+		va = new VertexArray;
+		std::vector<GLfloat> tempVertices;
 
 		std::string path = "res/obj/" + it + ".obj";
 		
@@ -139,10 +141,13 @@ int main() {
 			}
 		}
 
-		vbs[vbs.size() - 1].SetData(&tempVertices[0], tempVertices.size() * sizeof(GLfloat));
-		vas[vas.size() - 1].GenBuf();
-		vas[vas.size() - 1].AddBuffer(vbs[vbs.size() - 1], objLayout);
 		vertices.push_back(tempVertices);
+		vb->SetData(&vertices[vertices.size() - 1][0], vertices[vertices.size() - 1].size() * sizeof(GLfloat));
+		vbs.push_back(vb);
+		va->GenBuf();
+		va->AddBuffer(*vb, objLayout);
+		vas.push_back(va);
+		i++;
 	}
 	
 	glClearColor(0, 0.5, 1, 1);
@@ -219,7 +224,7 @@ int main() {
 			glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
 			glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
 
-			renderer.Draw(vas[i], ProgramID, vertices[i].size() / 8);
+			renderer.Draw(*vas[i], ProgramID, vertices[i].size() / 8);
 		}
 
 		//model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
