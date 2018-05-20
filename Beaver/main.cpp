@@ -60,9 +60,11 @@ std::vector <GLfloat> door_angles;
 std::vector <GLfloat> sin_doors;
 std::vector <glm::vec3> stone_pos;
 
+std::vector <glm::vec3> lights_pos;
+
 Camera camera(glm::vec3(0.0f, 2.0f, 5.0f));
 
-std::vector<std::string> objs = { "landscape", "house", "fence", "windows", "main_door", "stone" };
+std::vector<std::string> objs = { "landscape", "house", "fence", "windows", "main_door", "stone", "sphere" };
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void MouseCallback(GLFWwindow *window, double xPos, double yPos);
@@ -86,6 +88,9 @@ int main() {
 	stone_pos.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
 	stone_pos.push_back(glm::vec3(2.4f, 0.3f, 4.4f));
 	stone_pos.push_back(glm::vec3(-3.2f, -0.73f, -5.9f));
+
+	std::vector <glm::vec3> lights_pos;
+	std::vector <glm::vec3> lights_color;
 
 	log.LOG_TRACE("Creating command listener");
 	std::thread listenerThread(commandsListener);
@@ -207,7 +212,14 @@ int main() {
 	ImGui::StyleColorsDark();
 
 	glm::vec3 translation(1, 1, 0);
-	glm::vec3 light_pos(-2.3f, 7.0f, 5.0f);
+	lights_pos.push_back(glm::vec3(-2.3f, 7.0f, 5.0f));
+	lights_pos.push_back(glm::vec3(2.6f, 2.85f, 1.13f));
+	lights_pos.push_back(glm::vec3(6.2f, 2.37f, -0.12f));
+	lights_color.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+	lights_color.push_back(glm::vec3(0.2f, 0.2f, 0.2f));
+	lights_color.push_back(glm::vec3(0.2f, 0.2f, 0.2f));
+	bool lightOn[] = { true, true, true };
+
 	std::vector<glm::vec3> door_transitions;
 	glm::vec3 main_door_translation(-0.75f, 2.005f, 0.0f);
 	door_transitions.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -247,7 +259,7 @@ int main() {
 				if (cur_door == 2)
 				{
 					door_angles[3] = sin(glm::radians(0.5 * (-sin_doors[cur_door]))) * 90;
-				}				
+				}
 				door_angles[cur_door] = sin(glm::radians(0.5 * sin_doors[cur_door])) * 90;
 			}
 			if (door_angles[cur_door] >= 90.0f)
@@ -279,11 +291,20 @@ int main() {
 		glm::vec3 viewPos = camera.GetPos();
 		glUniform3f(u_viewPos, viewPos[0], viewPos[1], viewPos[2]);
 		glUniform1i(u_enableLighting, enable_lighting);
-		glUniform3f(u_lightPos, light_pos[0], light_pos[1], light_pos[2]);
 		glUniform1i(u_useTextures, true);
 		glUniform3f(u_color, 1.0, 1.0, 1.0);
 		glm::mat4 model;
 		glm::mat4 mvp;
+
+		for (int i = 0; i < lights_pos.size(); i++)
+		{
+			int pos = glGetUniformLocation(ProgramID, (std::string("lightPositions[") + std::to_string(i) + std::string("]")).c_str());
+			glUniform3f(pos, lights_pos[i][0], lights_pos[i][1], lights_pos[i][2]);
+			pos = glGetUniformLocation(ProgramID, (std::string("lightColor[") + std::to_string(i) + std::string("]")).c_str());
+			glUniform3f(pos, lights_color[i][0], lights_color[i][1], lights_color[i][2]);
+			pos = glGetUniformLocation(ProgramID, (std::string("lightTurnOn[") + std::to_string(i) + std::string("]")).c_str());
+			glUniform1i(pos, lightOn[i]);
+		}
 
 		for (int i = 0; i < objs.size(); i++)
 		{
@@ -322,7 +343,6 @@ int main() {
 				}
 			else if (objs[i] == "stone")
 			{
-				glUniform1f(u_specularStregth, 0.0f);
 				for (int j = 0; j < stone_pos.size(); j++)
 				{
 					model = glm::translate(glm::mat4(1.0f), translation);
@@ -331,6 +351,23 @@ int main() {
 					rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(40.0f*j), glm::vec3(1.0f, 1.0f, 1.0f));
 					rotate = rotate * glm::translate(glm::mat4(1.0f), glm::vec3(5.895f, 1.474f, -0.362));
 					model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+					model = model * rotate;
+					mvp = proj * view * model;
+
+					glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
+					glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
+
+					textures[i]->Bind();
+					renderer.Draw(*vas[i], ProgramID, vertices[i].size() / 8);
+				}
+			}
+			else if (objs[i] == "sphere")
+			{
+				for (int j = 0; j < lights_pos.size(); j++)
+				{
+					model = glm::translate(glm::mat4(1.0f), lights_pos[j]);
+					glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+					model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 					model = model * rotate;
 					mvp = proj * view * model;
 
@@ -366,8 +403,23 @@ int main() {
 
 			ImGui::Begin("Debug", 0);
 			ImGui::SliderFloat3("Translation", &translation.x, -5.0f, 5.0f);
-			ImGui::SliderFloat3("Light Pos", &light_pos[0], -5.0f, 5.0f);
-			ImGui::SliderFloat("Rotation", &angle, -360, 360);
+			ImGui::SliderFloat3("Light 1 Pos", &lights_pos[0][0], -5.0f, 5.0f);
+			ImGui::SliderFloat3("Light 2 Pos", &lights_pos[1][0], -5.0f, 5.0f);
+			ImGui::SliderFloat3("Light 3 Pos", &lights_pos[2][0], -5.0f, 5.0f);
+			if (ImGui::Button("Light 1"))
+			{
+				lightOn[0] = !lightOn[0];
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Light 2"))
+			{
+				lightOn[1] = !lightOn[1];
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Light 3"))
+			{
+				lightOn[2] = !lightOn[2];
+			}
 			if (ImGui::Button("Hide"))
 			{
 				debugMode = false;
@@ -384,12 +436,12 @@ int main() {
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
 
-			ImGui::Begin("Temp");
+			/*ImGui::Begin("Temp");
 			ImGui::InputFloat("X", &camera.GetPos()[0], 0.01f, 1.0f);
 			ImGui::InputFloat("Y", &camera.GetPos()[1], 0.01f, 1.0f);
 			ImGui::InputFloat("Z", &camera.GetPos()[2], 0.01f, 1.0f);
 			ImGui::End();
-
+			*/
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 		}
@@ -434,9 +486,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 		glm::vec3 p1 = camera.GetPos();
 		std::vector<glm::vec3> pos;
-		/*pos.push_back(glm::vec3(-3.287f, -0.177f, 0.238f));		//main
-		pos.push_back(glm::vec3(-4.037f, 1.828f, 0.0f));		//top
-		pos.push_back(glm::vec3(-4.287f, -0.177f, -6.382f));	//double door*/
 		pos.push_back(glm::vec3(3.0f, 1.38f, 0.0f));		//main
 		pos.push_back(glm::vec3(2.3f, 3.7f, 0.0f));			//top
 		pos.push_back(glm::vec3(1.8f, 1.8f, -6.7f));		//double door

@@ -13,6 +13,9 @@ uniform bool u_enable_lighting;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform float specularStrength;
+uniform vec3 lightPositions[3];
+uniform vec3 lightColor[3];
+uniform bool lightTurnOn[3];
 
 void textureFrag()
 {
@@ -38,25 +41,33 @@ void main()
 
 	if (u_enable_lighting)
 	{
-		vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
-		//ambient
-		float ambientStrength = 0.1;
-		vec3 ambient = ambientStrength * lightColor;
+		vec3 temp = vec3(0.0f, 0.0f, 0.0f);
+		for (int i = 0; i < 3; i++)
+		{
+			if (lightTurnOn[i])
+			{
+				//vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
+				//ambient
+				float ambientStrength = 0.1;
+				vec3 ambient = ambientStrength * lightColor[i];
 
-		//diffuse
-		vec3 norm = normalize(Normal);
-		vec3 lightDir = normalize(lightPos - FragPos);
-		float diff = max(dot(norm, lightDir), 0.0);
-		vec3 diffuse = diff * lightColor;
+				//diffuse
+				vec3 norm = normalize(Normal);
+				vec3 lightDir = normalize(lightPositions[i] - FragPos);
+				float diff = max(dot(norm, lightDir), 0.0);
+				vec3 diffuse = diff * lightColor[i];
 
-		//specular
-		//float specularStrength = 0.5;
-		vec3 viewDir = normalize(viewPos - FragPos);
-		vec3 reflectDir = reflect(-lightDir, norm);
-		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-		vec3 specular = specularStrength*spec*lightColor;
+				//specular
+				//float specularStrength = 0.5;
+				vec3 viewDir = normalize(viewPos - FragPos);
+				vec3 reflectDir = reflect(-lightDir, norm);
+				float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+				vec3 specular = specularStrength * spec * lightColor[i];
+				temp += ambient + diffuse + specular;
+			}
+		}
 
-		vec4 result = vec4((ambient + diffuse + specular), 1.0f) * color;
+		vec4 result = vec4(temp, 1.0f) * color;
 		color = result;
 	}
 }
