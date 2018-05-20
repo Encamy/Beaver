@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <thread>
 #include <iostream>
+#include <cmath>
 //GLEW
 #define GLEW_STATIC
 #include <GL\glew.h>
@@ -38,6 +39,8 @@
 #define LOG_ERROR(a) LOG_ERROR(a, __func__);
 #define LOG_INFO(a) LOG_INFO(a, __func__);
 
+#define SQR(x) (x) * (x)
+
 GLFWwindow* window;
 int screen_width = 800, screen_height = 600;
 
@@ -47,10 +50,19 @@ bool firstMouse = true;
 
 bool keys[1024];
 bool debugMode = false;
+bool open_door = false;
+bool close_door = false;
+int cur_door = 0;
+//float sin_door = 0;
+
+std::vector <bool> door_states; //false - closed, true - opened;
+std::vector <GLfloat> door_angles;
+std::vector <GLfloat> sin_doors;
+std::vector <glm::vec3> stone_pos;
 
 Camera camera(glm::vec3(0.0f, 2.0f, 5.0f));
 
-std::vector<std::string> objs = { "landscape", "house" };
+std::vector<std::string> objs = { "landscape", "house", "fence", "windows", "main_door", "stone" };
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void MouseCallback(GLFWwindow *window, double xPos, double yPos);
@@ -58,6 +70,23 @@ void commandsListener();
 
 int main() {
 	bool enable_lighting = true;
+	door_states.push_back(false);
+	door_states.push_back(false);
+	door_states.push_back(false);
+	door_states.push_back(false);
+	door_angles.push_back(0.0f);
+	door_angles.push_back(0.0f);
+	door_angles.push_back(0.0f);
+	door_angles.push_back(0.0f);
+	sin_doors.push_back(0.0f);
+	sin_doors.push_back(0.0f);
+	sin_doors.push_back(0.0f);
+	sin_doors.push_back(0.0f);
+
+	stone_pos.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+	stone_pos.push_back(glm::vec3(2.4f, 0.3f, 4.4f));
+	stone_pos.push_back(glm::vec3(-3.2f, -0.73f, -5.9f));
+
 	log.LOG_TRACE("Creating command listener");
 	std::thread listenerThread(commandsListener);
 	log.LOG_TRACE("Command listener created!");
@@ -166,6 +195,7 @@ int main() {
 	int u_lightPos = glGetUniformLocation(ProgramID, "lightPos");
 	int u_model = glGetUniformLocation(ProgramID, "model");
 	int u_viewPos = glGetUniformLocation(ProgramID, "viewPos");
+	int u_specularStregth = glGetUniformLocation(ProgramID, "specularStrength");
 
 	glUseProgram(0);
 
@@ -178,7 +208,14 @@ int main() {
 
 	glm::vec3 translation(1, 1, 0);
 	glm::vec3 light_pos(-2.3f, 7.0f, 5.0f);
+	std::vector<glm::vec3> door_transitions;
+	glm::vec3 main_door_translation(-0.75f, 2.005f, 0.0f);
+	door_transitions.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+	door_transitions.push_back(glm::vec3(-0.75f, 2.005f, 0.0f));
+	door_transitions.push_back(glm::vec3(-0.75f, 0.0f, -6.62f));
+	door_transitions.push_back(glm::vec3(-1.5f, 0.0f, -6.62f));
 	GLfloat angle = 0;
+	GLfloat door_angle = 0;
 
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetCursorPosCallback(window, MouseCallback);
@@ -202,6 +239,37 @@ int main() {
 			camera.ProcessKeyboard(UP, camera.MovementSpeed);
 		if (keys[GLFW_KEY_LEFT_SHIFT])
 			camera.ProcessKeyboard(DOWN, camera.MovementSpeed);
+		if (cur_door != -1)
+		{
+			if (open_door && door_angles[cur_door] < 90.0f)
+			{
+				sin_doors[cur_door] += 5.0f;
+				if (cur_door == 2)
+				{
+					door_angles[3] = sin(glm::radians(0.5 * (-sin_doors[cur_door]))) * 90;
+				}				
+				door_angles[cur_door] = sin(glm::radians(0.5 * sin_doors[cur_door])) * 90;
+			}
+			if (door_angles[cur_door] >= 90.0f)
+			{
+				door_states[cur_door] = true;
+				open_door = false;
+			}
+			if (close_door && door_angles[cur_door] > 0.0f)
+			{
+				sin_doors[cur_door] -= 5.0f;
+				if (cur_door == 2)
+				{
+					door_angles[3] = sin(glm::radians(0.5 * (-sin_doors[cur_door]))) * 90;
+				}
+				door_angles[cur_door] = sin(glm::radians(0.5 * sin_doors[cur_door])) * 90;
+			}
+			if (door_angles[cur_door] <= 0.0f)
+			{
+				door_states[cur_door] = false;
+				close_door = false;
+			}
+		}
 
 		glUseProgram(ProgramID);
 
@@ -219,21 +287,77 @@ int main() {
 
 		for (int i = 0; i < objs.size(); i++)
 		{
-			model = glm::translate(glm::mat4(1.0f), translation);
-			glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-			model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-			model = model * rotate;
-			mvp = proj * view * model;
+			glUniform1f(u_specularStregth, 0.5f);
+			if (objs[i] == "landscape")
+				glUniform1f(u_specularStregth, 0.15f);
+			if (objs[i] == "main_door")
+				for (int j = 0; j < 4; j++)
+				{
+					model = glm::translate(glm::mat4(1.0f), translation);
+					model = model * glm::translate(glm::mat4(1.0f), door_transitions[j]);
+					glm::mat4 rotate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
-			glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
-			glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
+					if (j == 2)
+					{
+						rotate = glm::translate(glm::mat4(1.0f), glm::vec3(4.687f, 0.177f, -0.238f));
+						rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(door_angles[j]), glm::vec3(0.0f, 1.0f, 0.0f));
+						rotate = rotate * glm::translate(glm::mat4(1.0f), glm::vec3(-4.687f, -0.177f, 0.238f));
+					}
+					else
+					{
+						rotate = glm::translate(glm::mat4(1.0f), glm::vec3(3.287f, 0.177f, -0.238f));
+						rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(door_angles[j]), glm::vec3(0.0f, 1.0f, 0.0f));
+						rotate = rotate * glm::translate(glm::mat4(1.0f), glm::vec3(-3.287f, -0.177f, 0.238f));
+					}
 
-			textures[i]->Bind();
-			renderer.Draw(*vas[i], ProgramID, vertices[i].size() / 8);
+					model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+					model = model * rotate;
+					mvp = proj * view * model;
+
+					glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
+					glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
+
+					textures[i]->Bind();
+					renderer.Draw(*vas[i], ProgramID, vertices[i].size() / 8);
+				}
+			else if (objs[i] == "stone")
+			{
+				glUniform1f(u_specularStregth, 0.0f);
+				for (int j = 0; j < stone_pos.size(); j++)
+				{
+					model = glm::translate(glm::mat4(1.0f), translation);
+					model = model * glm::translate(glm::mat4(1.0f), stone_pos[j]);
+					glm::mat4 rotate = glm::translate(glm::mat4(1.0f), glm::vec3(-5.895f, -1.474f, 0.362f));
+					rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(40.0f*j), glm::vec3(1.0f, 1.0f, 1.0f));
+					rotate = rotate * glm::translate(glm::mat4(1.0f), glm::vec3(5.895f, 1.474f, -0.362));
+					model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+					model = model * rotate;
+					mvp = proj * view * model;
+
+					glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
+					glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
+
+					textures[i]->Bind();
+					renderer.Draw(*vas[i], ProgramID, vertices[i].size() / 8);
+				}
+			}
+			else
+			{
+				model = glm::translate(glm::mat4(1.0f), translation);
+				glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+				model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+				model = model * rotate;
+				mvp = proj * view * model;
+
+				glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
+				glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
+
+				textures[i]->Bind();
+				renderer.Draw(*vas[i], ProgramID, vertices[i].size() / 8);
+
+			}
 		}
 
-		//model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-		
 		OpenGlError();
 
 		if (debugMode)
@@ -258,6 +382,12 @@ int main() {
 			}
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+
+			ImGui::Begin("Temp");
+			ImGui::InputFloat("X", &camera.GetPos()[0], 0.01f, 1.0f);
+			ImGui::InputFloat("Y", &camera.GetPos()[1], 0.01f, 1.0f);
+			ImGui::InputFloat("Z", &camera.GetPos()[2], 0.01f, 1.0f);
 			ImGui::End();
 
 			ImGui::Render();
@@ -298,6 +428,38 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		{
 			keys[key] = false;
 		}
+	}
+
+	if (key == GLFW_KEY_F)
+	{
+		glm::vec3 p1 = camera.GetPos();
+		std::vector<glm::vec3> pos;
+		/*pos.push_back(glm::vec3(-3.287f, -0.177f, 0.238f));		//main
+		pos.push_back(glm::vec3(-4.037f, 1.828f, 0.0f));		//top
+		pos.push_back(glm::vec3(-4.287f, -0.177f, -6.382f));	//double door*/
+		pos.push_back(glm::vec3(3.0f, 1.38f, 0.0f));		//main
+		pos.push_back(glm::vec3(2.3f, 3.7f, 0.0f));			//top
+		pos.push_back(glm::vec3(1.8f, 1.8f, -6.7f));		//double door
+		pos.push_back(glm::vec3(1.8f, 1.8f, -6.7f));		//double door
+		float d = 9999;
+		for (int i = 0; i < pos.size(); i++)
+		{
+			float d1 = sqrt(SQR(pos[i].x - p1.x) + SQR(pos[i].y - p1.y) + SQR(pos[i].z - p1.z));
+			if (d1 < d)
+			{
+				d = d1;
+				cur_door = i;
+			}
+		}
+		if (d <= 2.2)
+		{
+			if (!door_states[cur_door])
+				open_door = true;
+			else
+				close_door = true;
+		}
+		else
+			cur_door = -1;
 	}
 }
 
