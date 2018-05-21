@@ -35,7 +35,7 @@ Renderer::Renderer(int width, int heigth, GLFWwindow **window)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	*window = glfwCreateWindow(width, heigth, "TEST", nullptr, nullptr);
+	*window = glfwCreateWindow(width, heigth, "Beaver", nullptr, nullptr);
 	if (*window == nullptr)
 	{
 		log.LOG_FATAL("Failed to create GLFW window");
