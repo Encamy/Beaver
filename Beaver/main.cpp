@@ -42,66 +42,67 @@
 #define SQR(x) (x) * (x)
 
 GLFWwindow* window;
-int screen_width = 800, screen_height = 600;
+int screenWidth = 800, screenHeight = 600;
 
-float lastX = screen_width / 2.0f;
-float lastY = screen_height / 2.0f;
+float lastX = screenWidth / 2.0f;
+float lastY = screenHeight / 2.0f;
 bool firstMouse = true;
 
 bool keys[1024];
 bool debugMode = false;
-bool open_door = false;
-bool close_door = false;
-int cur_door = 0;
+bool openDoor = false;
+bool closeDoor = false;
+int curDoor = 0;
 //float sin_door = 0;
 
-std::vector <bool> door_states; //false - closed, true - opened;
-std::vector <GLfloat> door_angles;
-std::vector <GLfloat> sin_doors;
-std::vector <glm::vec3> stone_pos;
+std::vector <bool> doorStates; //false - closed, true - opened;
+std::vector <GLfloat> doorAngles;
+std::vector <GLfloat> sinDoors;
+std::vector <glm::vec3> stonePos;
 
-std::vector <glm::vec3> lights_pos;
+std::vector <glm::vec3> lightsPos;
 
 Camera camera(glm::vec3(0.0f, 2.0f, 5.0f));
 
 std::vector<std::string> objs = { "landscape", "house", "fence", "windows", "main_door", "stone", "sphere" };
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void MouseCallback(GLFWwindow *window, double xPos, double yPos);
 void commandsListener();
 
 int main() {
-	bool enable_lighting = true;
-	door_states.push_back(false);
-	door_states.push_back(false);
-	door_states.push_back(false);
-	door_states.push_back(false);
-	door_angles.push_back(0.0f);
-	door_angles.push_back(0.0f);
-	door_angles.push_back(0.0f);
-	door_angles.push_back(0.0f);
-	sin_doors.push_back(0.0f);
-	sin_doors.push_back(0.0f);
-	sin_doors.push_back(0.0f);
-	sin_doors.push_back(0.0f);
+	bool enableLighting = true;
+	bool enableTextures = true;
+	doorStates.push_back(false);
+	doorStates.push_back(false);
+	doorStates.push_back(false);
+	doorStates.push_back(false);
+	doorAngles.push_back(0.0f);
+	doorAngles.push_back(0.0f);
+	doorAngles.push_back(0.0f);
+	doorAngles.push_back(0.0f);
+	sinDoors.push_back(0.0f);
+	sinDoors.push_back(0.0f);
+	sinDoors.push_back(0.0f);
+	sinDoors.push_back(0.0f);
 
-	stone_pos.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-	stone_pos.push_back(glm::vec3(2.4f, 0.3f, 4.4f));
-	stone_pos.push_back(glm::vec3(-3.2f, -0.73f, -5.9f));
+	stonePos.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+	stonePos.push_back(glm::vec3(2.4f, 0.3f, 4.4f));
+	stonePos.push_back(glm::vec3(-3.2f, -0.73f, -5.9f));
 
-	std::vector <glm::vec3> lights_pos;
-	std::vector <glm::vec3> lights_color;
+	std::vector <glm::vec3> lightsPos;
+	std::vector <glm::vec3> lightsColor;
 
 	log.LOG_TRACE("Creating command listener");
 	std::thread listenerThread(commandsListener);
 	log.LOG_TRACE("Command listener created!");
 
-	Renderer renderer(screen_width, screen_height, &window);
+	Renderer renderer(screenWidth, screenHeight, &window);
 
 	log.LOG_INFO("GLSL compiler can optimize unused uniforms");
 	log.LOG_INFO("Just ignore \"Invalid location of iniform\" error!");
 
-	glfwSetKeyCallback(window, key_callback);
+	glfwSetKeyCallback(window, keyCallback);
 	glfwSetCursorPosCallback(window, MouseCallback);
 
 	if (!debugMode)
@@ -204,32 +205,32 @@ int main() {
 
 	glUseProgram(0);
 
-	int texture_uniform = glGetUniformLocation(ProgramID, "u_Texture");
-	glUniform1i(texture_uniform, 0);
+	int u_texture = glGetUniformLocation(ProgramID, "u_Texture");
+	glUniform1i(u_texture, 0);
 
 	ImGui::CreateContext();
 	ImGui_ImplGlfwGL3_Init(window, true);
 	ImGui::StyleColorsDark();
 
-	glm::vec3 translation(1, 1, 0);
-	lights_pos.push_back(glm::vec3(-2.3f, 7.0f, 5.0f));
-	lights_pos.push_back(glm::vec3(2.6f, 2.85f, 1.13f));
-	lights_pos.push_back(glm::vec3(6.2f, 2.37f, -0.12f));
-	lights_color.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
-	lights_color.push_back(glm::vec3(0.2f, 0.2f, 0.2f));
-	lights_color.push_back(glm::vec3(0.2f, 0.2f, 0.2f));
+	glm::vec3 transition(1, 1, 0);
+	lightsPos.push_back(glm::vec3(-2.3f, 7.0f, 5.0f));
+	lightsPos.push_back(glm::vec3(2.6f, 2.85f, 1.13f));
+	lightsPos.push_back(glm::vec3(6.2f, 2.37f, -0.12f));
+	lightsColor.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+	lightsColor.push_back(glm::vec3(0.2f, 0.2f, 0.2f));
+	lightsColor.push_back(glm::vec3(0.2f, 0.2f, 0.2f));
 	bool lightOn[] = { true, true, true };
 
-	std::vector<glm::vec3> door_transitions;
-	glm::vec3 main_door_translation(-0.75f, 2.005f, 0.0f);
-	door_transitions.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-	door_transitions.push_back(glm::vec3(-0.75f, 2.005f, 0.0f));
-	door_transitions.push_back(glm::vec3(-0.75f, 0.0f, -6.62f));
-	door_transitions.push_back(glm::vec3(-1.5f, 0.0f, -6.62f));
+	std::vector<glm::vec3> doorTransitions;
+	glm::vec3 mainDoorTransition(-0.75f, 2.005f, 0.0f);
+	doorTransitions.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+	doorTransitions.push_back(glm::vec3(-0.75f, 2.005f, 0.0f));
+	doorTransitions.push_back(glm::vec3(-0.75f, 0.0f, -6.62f));
+	doorTransitions.push_back(glm::vec3(-1.5f, 0.0f, -6.62f));
 	GLfloat angle = 0;
 	GLfloat door_angle = 0;
 
-	glfwSetKeyCallback(window, key_callback);
+	glfwSetKeyCallback(window, keyCallback);
 	glfwSetCursorPosCallback(window, MouseCallback);
 
 	while (!glfwWindowShouldClose(window))
@@ -251,57 +252,57 @@ int main() {
 			camera.ProcessKeyboard(UP, camera.MovementSpeed);
 		if (keys[GLFW_KEY_LEFT_SHIFT])
 			camera.ProcessKeyboard(DOWN, camera.MovementSpeed);
-		if (cur_door != -1)
+		if (curDoor != -1)
 		{
-			if (open_door && door_angles[cur_door] < 90.0f)
+			if (openDoor && doorAngles[curDoor] < 90.0f)
 			{
-				sin_doors[cur_door] += 5.0f;
-				if (cur_door == 2)
+				sinDoors[curDoor] += 5.0f;
+				if (curDoor == 2)
 				{
-					door_angles[3] = sin(glm::radians(0.5 * (-sin_doors[cur_door]))) * 90;
+					doorAngles[3] = sin(glm::radians(0.5 * (-sinDoors[curDoor]))) * 90;
 				}
-				door_angles[cur_door] = sin(glm::radians(0.5 * sin_doors[cur_door])) * 90;
+				doorAngles[curDoor] = sin(glm::radians(0.5 * sinDoors[curDoor])) * 90;
 			}
-			if (door_angles[cur_door] >= 90.0f)
+			if (doorAngles[curDoor] >= 90.0f)
 			{
-				door_states[cur_door] = true;
-				open_door = false;
+				doorStates[curDoor] = true;
+				openDoor = false;
 			}
-			if (close_door && door_angles[cur_door] > 0.0f)
+			if (closeDoor && doorAngles[curDoor] > 0.0f)
 			{
-				sin_doors[cur_door] -= 5.0f;
-				if (cur_door == 2)
+				sinDoors[curDoor] -= 5.0f;
+				if (curDoor == 2)
 				{
-					door_angles[3] = sin(glm::radians(0.5 * (-sin_doors[cur_door]))) * 90;
+					doorAngles[3] = sin(glm::radians(0.5 * (-sinDoors[curDoor]))) * 90;
 				}
-				door_angles[cur_door] = sin(glm::radians(0.5 * sin_doors[cur_door])) * 90;
+				doorAngles[curDoor] = sin(glm::radians(0.5 * sinDoors[curDoor])) * 90;
 			}
-			if (door_angles[cur_door] <= 0.0f)
+			if (doorAngles[curDoor] <= 0.0f)
 			{
-				door_states[cur_door] = false;
-				close_door = false;
+				doorStates[curDoor] = false;
+				closeDoor = false;
 			}
 		}
 
 		glUseProgram(ProgramID);
 
-		glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
+		glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 
 		glm::vec3 viewPos = camera.GetPos();
 		glUniform3f(u_viewPos, viewPos[0], viewPos[1], viewPos[2]);
-		glUniform1i(u_enableLighting, enable_lighting);
-		glUniform1i(u_useTextures, true);
+		glUniform1i(u_enableLighting, enableLighting);
+		glUniform1i(u_useTextures, enableTextures);
 		glUniform3f(u_color, 1.0, 1.0, 1.0);
 		glm::mat4 model;
 		glm::mat4 mvp;
 
-		for (int i = 0; i < lights_pos.size(); i++)
+		for (int i = 0; i < lightsPos.size(); i++)
 		{
 			int pos = glGetUniformLocation(ProgramID, (std::string("lightPositions[") + std::to_string(i) + std::string("]")).c_str());
-			glUniform3f(pos, lights_pos[i][0], lights_pos[i][1], lights_pos[i][2]);
+			glUniform3f(pos, lightsPos[i][0], lightsPos[i][1], lightsPos[i][2]);
 			pos = glGetUniformLocation(ProgramID, (std::string("lightColor[") + std::to_string(i) + std::string("]")).c_str());
-			glUniform3f(pos, lights_color[i][0], lights_color[i][1], lights_color[i][2]);
+			glUniform3f(pos, lightsColor[i][0], lightsColor[i][1], lightsColor[i][2]);
 			pos = glGetUniformLocation(ProgramID, (std::string("lightTurnOn[") + std::to_string(i) + std::string("]")).c_str());
 			glUniform1i(pos, lightOn[i]);
 		}
@@ -314,20 +315,20 @@ int main() {
 			if (objs[i] == "main_door")
 				for (int j = 0; j < 4; j++)
 				{
-					model = glm::translate(glm::mat4(1.0f), translation);
-					model = model * glm::translate(glm::mat4(1.0f), door_transitions[j]);
+					model = glm::translate(glm::mat4(1.0f), transition);
+					model = model * glm::translate(glm::mat4(1.0f), doorTransitions[j]);
 					glm::mat4 rotate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 					if (j == 2)
 					{
 						rotate = glm::translate(glm::mat4(1.0f), glm::vec3(4.687f, 0.177f, -0.238f));
-						rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(door_angles[j]), glm::vec3(0.0f, 1.0f, 0.0f));
+						rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(doorAngles[j]), glm::vec3(0.0f, 1.0f, 0.0f));
 						rotate = rotate * glm::translate(glm::mat4(1.0f), glm::vec3(-4.687f, -0.177f, 0.238f));
 					}
 					else
 					{
 						rotate = glm::translate(glm::mat4(1.0f), glm::vec3(3.287f, 0.177f, -0.238f));
-						rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(door_angles[j]), glm::vec3(0.0f, 1.0f, 0.0f));
+						rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(doorAngles[j]), glm::vec3(0.0f, 1.0f, 0.0f));
 						rotate = rotate * glm::translate(glm::mat4(1.0f), glm::vec3(-3.287f, -0.177f, 0.238f));
 					}
 
@@ -343,10 +344,10 @@ int main() {
 				}
 			else if (objs[i] == "stone")
 			{
-				for (int j = 0; j < stone_pos.size(); j++)
+				for (int j = 0; j < stonePos.size(); j++)
 				{
-					model = glm::translate(glm::mat4(1.0f), translation);
-					model = model * glm::translate(glm::mat4(1.0f), stone_pos[j]);
+					model = glm::translate(glm::mat4(1.0f), transition);
+					model = model * glm::translate(glm::mat4(1.0f), stonePos[j]);
 					glm::mat4 rotate = glm::translate(glm::mat4(1.0f), glm::vec3(-5.895f, -1.474f, 0.362f));
 					rotate = rotate * glm::rotate(glm::mat4(1.0f), glm::radians(40.0f*j), glm::vec3(1.0f, 1.0f, 1.0f));
 					rotate = rotate * glm::translate(glm::mat4(1.0f), glm::vec3(5.895f, 1.474f, -0.362));
@@ -363,9 +364,9 @@ int main() {
 			}
 			else if (objs[i] == "sphere")
 			{
-				for (int j = 0; j < lights_pos.size(); j++)
+				for (int j = 0; j < lightsPos.size(); j++)
 				{
-					model = glm::translate(glm::mat4(1.0f), lights_pos[j]);
+					model = glm::translate(glm::mat4(1.0f), lightsPos[j]);
 					glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
 					model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 					model = model * rotate;
@@ -380,7 +381,7 @@ int main() {
 			}
 			else
 			{
-				model = glm::translate(glm::mat4(1.0f), translation);
+				model = glm::translate(glm::mat4(1.0f), transition);
 				glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
 				model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 				model = model * rotate;
@@ -391,7 +392,6 @@ int main() {
 
 				textures[i]->Bind();
 				renderer.Draw(*vas[i], ProgramID, vertices[i].size() / 8);
-
 			}
 		}
 
@@ -402,10 +402,10 @@ int main() {
 			ImGui_ImplGlfwGL3_NewFrame();
 
 			ImGui::Begin("Debug", 0);
-			ImGui::SliderFloat3("Translation", &translation.x, -5.0f, 5.0f);
-			ImGui::SliderFloat3("Light 1 Pos", &lights_pos[0][0], -5.0f, 5.0f);
-			ImGui::SliderFloat3("Light 2 Pos", &lights_pos[1][0], -5.0f, 5.0f);
-			ImGui::SliderFloat3("Light 3 Pos", &lights_pos[2][0], -5.0f, 5.0f);
+			ImGui::SliderFloat3("Transition", &transition.x, -5.0f, 5.0f);
+			ImGui::SliderFloat3("Light 1 Pos", &lightsPos[0][0], -5.0f, 5.0f);
+			ImGui::SliderFloat3("Light 2 Pos", &lightsPos[1][0], -5.0f, 5.0f);
+			ImGui::SliderFloat3("Light 3 Pos", &lightsPos[2][0], -5.0f, 5.0f);
 			if (ImGui::Button("Light 1"))
 			{
 				lightOn[0] = !lightOn[0];
@@ -430,18 +430,17 @@ int main() {
 			ImGui::SameLine();
 			if (ImGui::Button("Lighting")) 
 			{
-				enable_lighting = !enable_lighting;
+				enableLighting = !enableLighting;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Texturing"))
+			{
+				enableTextures = !enableTextures;
 			}
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
 
-			/*ImGui::Begin("Temp");
-			ImGui::InputFloat("X", &camera.GetPos()[0], 0.01f, 1.0f);
-			ImGui::InputFloat("Y", &camera.GetPos()[1], 0.01f, 1.0f);
-			ImGui::InputFloat("Z", &camera.GetPos()[2], 0.01f, 1.0f);
-			ImGui::End();
-			*/
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 		}
@@ -457,7 +456,7 @@ int main() {
 	return 0;
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
 	if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
 	{
@@ -497,18 +496,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			if (d1 < d)
 			{
 				d = d1;
-				cur_door = i;
+				curDoor = i;
 			}
 		}
 		if (d <= 2.2)
 		{
-			if (!door_states[cur_door])
-				open_door = true;
+			if (!doorStates[curDoor])
+				openDoor = true;
 			else
-				close_door = true;
+				closeDoor = true;
 		}
 		else
-			cur_door = -1;
+			curDoor = -1;
 	}
 }
 
