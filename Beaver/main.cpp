@@ -53,6 +53,7 @@ bool debugMode = false;
 bool open_door = false;
 bool close_door = false;
 int cur_door = 0;
+bool polygonMode = false;
 //float sin_door = 0;
 
 std::vector <bool> door_states; //false - closed, true - opened;
@@ -64,7 +65,7 @@ std::vector <glm::vec3> lights_pos;
 
 Camera camera(glm::vec3(0.0f, 2.0f, 5.0f));
 
-std::vector<std::string> objs = { "landscape", "house", "fence", "windows", "main_door", "stone", "sphere" };
+std::vector<std::string> objs = { "landscape", "house", "fence", "windows", "main_door", "stone", "sphere", "cube" };
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void MouseCallback(GLFWwindow *window, double xPos, double yPos);
@@ -239,6 +240,15 @@ int main() {
 
 		renderer.Clear();
 
+		if (polygonMode)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		else
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+
 		if (keys[GLFW_KEY_W] == true)
 			camera.ProcessKeyboard(FORWARD, camera.MovementSpeed);
 		if (keys[GLFW_KEY_S] == true)
@@ -378,6 +388,27 @@ int main() {
 					renderer.Draw(*vas[i], ProgramID, vertices[i].size() / 8);
 				}
 			}
+			else if (objs[i] == "cube")
+			{
+				for (int j = 0; j < lights_pos.size(); j++)
+				{
+					model = glm::translate(glm::mat4(1.0f), glm::vec3(-4.75f, 0.0f, 2.4f));
+					//glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+					model = model * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+					//model = model * rotate;
+					mvp = proj * view * model;
+					glUniform1i(u_useTextures, false);
+					glUniform3f(u_color, 0.0f, 1.0f, 1.0f);
+
+					glUniformMatrix4fv(u_MVP, 1, GL_FALSE, &mvp[0][0]);
+					glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
+
+					textures[i]->Bind();
+					renderer.Draw(*vas[i], ProgramID, vertices[i].size() / 8);
+
+					glUniform1i(u_useTextures, true);
+				}
+			}
 			else
 			{
 				model = glm::translate(glm::mat4(1.0f), translation);
@@ -420,6 +451,11 @@ int main() {
 			{
 				lightOn[2] = !lightOn[2];
 			}
+			if (ImGui::Button("Polygon mode"))
+			{
+				polygonMode = !polygonMode;
+			}
+			ImGui::SameLine();
 			if (ImGui::Button("Hide"))
 			{
 				debugMode = false;
@@ -428,7 +464,7 @@ int main() {
 				firstMouse = true;
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Lighting")) 
+			if (ImGui::Button("Lighting enable / disable")) 
 			{
 				enable_lighting = !enable_lighting;
 			}
@@ -436,12 +472,12 @@ int main() {
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
 
-			/*ImGui::Begin("Temp");
+			ImGui::Begin("Temp");
 			ImGui::InputFloat("X", &camera.GetPos()[0], 0.01f, 1.0f);
 			ImGui::InputFloat("Y", &camera.GetPos()[1], 0.01f, 1.0f);
 			ImGui::InputFloat("Z", &camera.GetPos()[2], 0.01f, 1.0f);
 			ImGui::End();
-			*/
+			
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 		}
