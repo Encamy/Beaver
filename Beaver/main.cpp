@@ -419,7 +419,7 @@ int main()
 		glUniform3f(u_viewPos, viewPos[0], viewPos[1], viewPos[2]);
 		glUniform1i(u_enableLighting, enableLighting);
 		glUniform3f(u_lightPos, lightPosition[0], lightPosition[1], lightPosition[2]);
-		glUniform1i(u_useTextures, false);
+		glUniform1i(u_useTextures, true);
 
 		glm::mat4 model;
 		glm::mat4 mvp;
