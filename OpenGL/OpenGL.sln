@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.10
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GLFW sample project", "..\GLFW sample project\GLFW sample project.vcxproj", "{B9B8A6E9-C461-4531-A1A1-75297753ED69}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Beaver", "..\Beaver\Beaver.vcxproj", "{6625EBE9-A9BC-4270-A15F-D157D262C28E}"
 EndProject
 Global
@@ -15,14 +13,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B9B8A6E9-C461-4531-A1A1-75297753ED69}.Debug|x64.ActiveCfg = Debug|x64
-		{B9B8A6E9-C461-4531-A1A1-75297753ED69}.Debug|x64.Build.0 = Debug|x64
-		{B9B8A6E9-C461-4531-A1A1-75297753ED69}.Debug|x86.ActiveCfg = Debug|Win32
-		{B9B8A6E9-C461-4531-A1A1-75297753ED69}.Debug|x86.Build.0 = Debug|Win32
-		{B9B8A6E9-C461-4531-A1A1-75297753ED69}.Release|x64.ActiveCfg = Release|x64
-		{B9B8A6E9-C461-4531-A1A1-75297753ED69}.Release|x64.Build.0 = Release|x64
-		{B9B8A6E9-C461-4531-A1A1-75297753ED69}.Release|x86.ActiveCfg = Release|Win32
-		{B9B8A6E9-C461-4531-A1A1-75297753ED69}.Release|x86.Build.0 = Release|Win32
 		{6625EBE9-A9BC-4270-A15F-D157D262C28E}.Debug|x64.ActiveCfg = Debug|x64
 		{6625EBE9-A9BC-4270-A15F-D157D262C28E}.Debug|x64.Build.0 = Debug|x64
 		{6625EBE9-A9BC-4270-A15F-D157D262C28E}.Debug|x86.ActiveCfg = Debug|Win32
