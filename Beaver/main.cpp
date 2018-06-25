@@ -3,6 +3,7 @@
 #include <thread>
 #include <iostream>
 #include <cmath>
+#include <windows.h>
 //GLEW
 #define GLEW_STATIC
 #include <GL\glew.h>
@@ -12,10 +13,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+//IMGUi
+#include <imgui\imgui.h>
+#include <imgui\imgui_impl_glfw_gl3.h>
 //Beaver
 #include "Logger.h"
 #include "shader.hpp"
-#include <windows.h>
 #include "Renderer.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
@@ -26,26 +29,23 @@
 //STB
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-//IMGUi
-#include <imgui\imgui.h>
-#include <imgui\imgui_impl_glfw_gl3.h>
 //Tiny obj loader
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 //Logger definition
 #define log __log__
-#define LOG_TRACE(a) LOG_TRACE(a, __func__)
-#define LOG_FATAL(a) LOG_FATAL(a, __func__);
-#define LOG_ERROR(a) LOG_ERROR(a, __func__);
-#define LOG_INFO(a) LOG_INFO(a, __func__);
+#define LOG_TRACE(a) log.LOG_TRACE(a, __func__)
+#define LOG_FATAL(a) log.LOG_FATAL(a, __func__);
+#define LOG_ERROR(a) log.LOG_ERROR(a, __func__);
+#define LOG_INFO(a) log.LOG_INFO(a, __func__);
 
 #define SQR(x) (x) * (x)
 
 GLFWwindow* window;
 int screenWidth = 800, screenHeight = 600;
 
-float lastX = screenWidth / 2.0f;
-float lastY = screenHeight / 2.0f;
+double lastX = screenWidth / 2.0f;
+double lastY = screenHeight / 2.0f;
 bool firstMouse = true;
 
 bool keys[1024];
@@ -94,14 +94,14 @@ int main() {
 	std::vector <glm::vec3> lightsPos;
 	std::vector <glm::vec3> lightsColor;
 
-	log.LOG_TRACE("Creating command listener");
+	LOG_TRACE("Creating command listener");
 	std::thread listenerThread(commandsListener);
-	log.LOG_TRACE("Command listener created!");
+	LOG_TRACE("Command listener created!");
 
 	Renderer renderer(screenWidth, screenHeight, &window);
 
-	log.LOG_INFO("GLSL compiler can optimize unused uniforms");
-	log.LOG_INFO("Just ignore \"Invalid location of iniform\" error!");
+	LOG_INFO("GLSL compiler can optimize unused uniforms");
+	LOG_INFO("Just ignore \"Invalid location of iniform\" error!");
 
 	glfwSetKeyCallback(window, keyCallback);
 	glfwSetCursorPosCallback(window, MouseCallback);
@@ -142,21 +142,21 @@ int main() {
 		VertexArray *va;
 		va = new VertexArray;
 		std::vector<GLfloat> tempVertices;
-		log.LOG_TRACE("Loading texture \"res/images/" + it + ".png\"");
+		LOG_TRACE("Loading texture \"res/images/" + it + ".png\"");
 		Texture *texture = new Texture("res/images/" + it + ".png");
 		textures.push_back(texture);
 
 		std::string path = "res/obj/" + it + ".obj";
-		log.LOG_TRACE("Loading object \"" + it + "\" from \"" + path + "\"");
+		LOG_TRACE("Loading object \"" + it + "\" from \"" + path + "\"");
 		
 		tinyobj::LoadObj(&cubeAttrib, &shapes, &materials, &err, path.c_str());
 
 		if (!err.empty())
 		{
-			log.LOG_ERROR(err);
+			LOG_ERROR(err);
 		}
 
-		log.LOG_TRACE("Object \"" + it + "\" loaded from file");
+		LOG_TRACE("Object \"" + it + "\" loaded from file");
 
 		for (size_t s = 0; s < shapes.size(); s++)
 		{
@@ -165,7 +165,7 @@ int main() {
 			{
 				int fv = shapes[s].mesh.num_face_vertices[f];
 
-				for (size_t v = 0; v < fv; v++)
+				for (int v = 0; v < fv; v++)
 				{
 					tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 
@@ -189,7 +189,7 @@ int main() {
 		va->AddBuffer(*vb, objLayout);
 		vas.push_back(va);
 		i++;
-		log.LOG_TRACE("VB and VA are created for object \"" + it + "\"");
+		LOG_TRACE("VB and VA are created for object \"" + it + "\"");
 	}
 	
 	glClearColor(0, 0.5, 1, 1);
@@ -521,7 +521,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 		pos.push_back(glm::vec3(1.8f, 1.8f, -6.7f));		//double door
 		pos.push_back(glm::vec3(1.8f, 1.8f, -6.7f));		//double door
 		float d = 9999;
-		for (int i = 0; i < pos.size(); i++)
+		for (size_t i = 0; i < pos.size(); i++)
 		{
 			float d1 = sqrt(SQR(pos[i].x - p1.x) + SQR(pos[i].y - p1.y) + SQR(pos[i].z - p1.z));
 			if (d1 < d)
@@ -551,8 +551,8 @@ void MouseCallback(GLFWwindow *window, double xPos, double yPos)
 		firstMouse = false;
 	}
 
-	float xoffset = xPos - lastX;
-	float yoffset = lastY - yPos; // reversed since y-coordinates go from bottom to top
+	double xoffset = xPos - lastX;
+	double yoffset = lastY - yPos; // reversed since y-coordinates go from bottom to top
 
 	lastX = xPos;
 	lastY = yPos;

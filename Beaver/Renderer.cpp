@@ -1,11 +1,10 @@
 #include "Renderer.h"
-#include <thread>
 
 #define log __log__
-#define LOG_TRACE(a) LOG_TRACE(a, __func__)
-#define LOG_FATAL(a) LOG_FATAL(a, __func__);
-#define LOG_ERROR(a) LOG_ERROR(a, __func__);
-#define LOG_INFO(a) LOG_INFO(a, __func__);
+#define LOG_TRACE(a) log.LOG_TRACE(a, __func__)
+#define LOG_FATAL(a) log.LOG_FATAL(a, __func__);
+#define LOG_ERROR(a) log.LOG_ERROR(a, __func__);
+#define LOG_INFO(a) log.LOG_INFO(a, __func__);
 
 void GlClearError()
 {
@@ -18,7 +17,7 @@ bool OpenGlError()
 	{
 		std::stringstream message;
 		message << error;
-		__log__.LOG_ERROR(message.str(), __func__);
+		LOG_ERROR(message.str());
 		return true;
 	}
 	return false;
@@ -26,7 +25,7 @@ bool OpenGlError()
 
 Renderer::Renderer(int width, int heigth, GLFWwindow **window)
 {
-	log.LOG_TRACE("Initializing glfw");
+	LOG_TRACE("Initializing glfw");
 
 	glfwInit();
 	glfwWindowHint(GLFW_SAMPLES, 4);
@@ -38,7 +37,7 @@ Renderer::Renderer(int width, int heigth, GLFWwindow **window)
 	*window = glfwCreateWindow(width, heigth, "Beaver", nullptr, nullptr);
 	if (*window == nullptr)
 	{
-		log.LOG_FATAL("Failed to create GLFW window");
+		LOG_FATAL("Failed to create GLFW window");
 		glfwTerminate();
 		throw;
 	}
@@ -47,13 +46,13 @@ Renderer::Renderer(int width, int heigth, GLFWwindow **window)
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
 	{
-		log.LOG_FATAL("Failed to create GLFW window");
+		LOG_FATAL("Failed to create GLFW window");
 		throw;
 	}
 
-	log.LOG_TRACE("Initialization complete");
-	log.LOG_INFO("Renderer: " + std::string((char*)glGetString(GL_RENDERER)));
-	log.LOG_INFO("OpenGL version: " + std::string((char*)glGetString(GL_VERSION)));
+	LOG_TRACE("Initialization complete");
+	LOG_INFO("Renderer: " + std::string((char*)glGetString(GL_RENDERER)));
+	LOG_INFO("OpenGL version: " + std::string((char*)glGetString(GL_VERSION)));
 
 	glfwGetFramebufferSize(*window, &width, &heigth);
 

@@ -1,14 +1,13 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include "Logger.h"
 #include <GL/glew.h>
+#include <GLFW\glfw3.h>
 #include <string>
 #include <sstream>
+#include "Logger.h"
 #include "VertexArray.h"
 #include "IndexBuffer.h"
-#include "Logger.h"
-#include <GLFW\glfw3.h>
 
 #define ASSERT(x) if(!(x)) __debugbreak();
 #define GlCall(x) GlClearError(); x; ASSERT(OpenGlError);
