@@ -307,7 +307,7 @@ int main() {
 		glm::mat4 model;
 		glm::mat4 mvp;
 
-		for (int i = 0; i < lightsPos.size(); i++)
+		for (size_t i = 0; i < lightsPos.size(); i++)
 		{
 			int pos = glGetUniformLocation(ProgramID, (std::string("lightPositions[") + std::to_string(i) + std::string("]")).c_str());
 			glUniform3f(pos, lightsPos[i][0], lightsPos[i][1], lightsPos[i][2]);
@@ -317,7 +317,7 @@ int main() {
 			glUniform1i(pos, lightOn[i]);
 		}
 
-		for (int i = 0; i < objs.size(); i++)
+		for (size_t i = 0; i < objs.size(); i++)
 		{
 			glUniform1f(u_specularStregth, 0.5f);
 			if (objs[i] == "landscape")
@@ -354,7 +354,7 @@ int main() {
 				}
 			else if (objs[i] == "stone")
 			{
-				for (int j = 0; j < stonePos.size(); j++)
+				for (size_t j = 0; j < stonePos.size(); j++)
 				{
 					model = glm::translate(glm::mat4(1.0f), transition);
 					model = model * glm::translate(glm::mat4(1.0f), stonePos[j]);
@@ -374,7 +374,7 @@ int main() {
 			}
 			else if (objs[i] == "sphere")
 			{
-				for (int j = 0; j < lightsPos.size(); j++)
+				for (size_t j = 0; j < lightsPos.size(); j++)
 				{
 					model = glm::translate(glm::mat4(1.0f), lightsPos[j]);
 					glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));

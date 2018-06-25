@@ -2,7 +2,7 @@
 
 #include "stb_image.h"
 
-Texture::Texture(const std::string & path)
+Texture::Texture(const std::string &path)
 	: m_FilePath(path), m_LocalBuffer(nullptr), 
 	m_Width(0), m_Height(0), m_BPP(0)
 {
