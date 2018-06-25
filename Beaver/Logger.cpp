@@ -1,6 +1,9 @@
 #include "Logger.h"
 #include <cstdio>
-#include "boost/date_time.hpp"
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 #include "Windows.h"
 
 Logger __log__;
@@ -28,20 +31,22 @@ Logger::~Logger()
 
 void Logger::LOG(std::string input, std::string log_level, const char* caller)
 {
-	boost::posix_time::ptime timeLocal = boost::posix_time::second_clock::local_time();
-	int hh = timeLocal.time_of_day().hours();
-	int mm = timeLocal.time_of_day().minutes();
-	int ss = timeLocal.time_of_day().seconds();
-	std::string seconds = std::to_string(ss);
-	if (ss < 10)
-	{
-		seconds = "0" + seconds;
-	}
+	auto now = std::chrono::system_clock::now();
+	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+	auto timer = std::chrono::system_clock::to_time_t(now);
+	struct std::tm bt;
+	localtime_s(&bt, &timer);
+
+	std::ostringstream ss;
+
+	ss << std::put_time(&bt, "%T");
+	ss << '.' << std::setfill('0') << std::setw(3) << ms.count();
+
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	if (log_level == "ERROR")
 	{
-		printf("%i:%i:%s [", hh, mm, seconds.c_str());
+		printf("%s [", ss.str().c_str());
 		SetConsoleTextAttribute(hConsole, 12);
 		printf("%s", log_level.c_str());
 		SetConsoleTextAttribute(hConsole, 7);
@@ -50,7 +55,7 @@ void Logger::LOG(std::string input, std::string log_level, const char* caller)
 	else 
 	if (log_level == "FATAL")
 	{
-		printf("%i:%i:%s [", hh, mm, seconds.c_str());
+		printf("%s [", ss.str().c_str());
 		SetConsoleTextAttribute(hConsole, 79);
 		printf("%s", log_level.c_str());
 		SetConsoleTextAttribute(hConsole, 7);
@@ -58,13 +63,13 @@ void Logger::LOG(std::string input, std::string log_level, const char* caller)
 	}
 	else
 	{
-		printf("%i:%i:%s [%s][%s] %s\n", hh, mm, seconds.c_str(), log_level.c_str(), caller, input.c_str());
+		printf("%s [%s][%s] %s\n", ss.str().c_str(), log_level.c_str(), caller, input.c_str());
 	}
 	if (use_file)
 	{
 		log_file.open(log_filepath, std::ios::app);
 		std::string result_str;
-		log_file << hh << ":" << mm << ":" << seconds << "[" << log_level << "][" << caller << "]" << input << "\n";
+		log_file << ss.str() << "[" << log_level << "][" << caller << "]" << input << "\n";
 		log_file.close();
 	}
 }
